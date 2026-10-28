@@ -629,17 +629,17 @@ Do not implement custom cryptography or custom token algorithms.
 Verify that implementation can begin without unresolved product or architecture ambiguity that would cause immediate rework.
 
 ## Required Artifacts Before Bootstrap
-- [ ] Low-fidelity wireframes approved
-- [ ] Screen inventory frozen for MVP
-- [ ] Domain model documented
-- [ ] Scheduling rules V1 documented with examples
-- [ ] Database schema documented
-- [ ] API contract documented
-- [ ] Backend module boundaries documented
-- [ ] Frontend route/component structure documented
-- [ ] Testing strategy documented
-- [ ] Authentication ADR accepted
-- [ ] No unresolved requirement contradiction blocks implementation
+- [x] Low-fidelity wireframes approved
+- [x] Screen inventory frozen for MVP
+- [x] Domain model documented
+- [x] Scheduling rules V1 documented with examples
+- [x] Database schema documented
+- [x] API contract documented
+- [x] Backend module boundaries documented
+- [x] Frontend route/component structure documented
+- [x] Testing strategy documented
+- [x] Authentication ADR accepted
+- [x] No unresolved requirement contradiction blocks implementation
 
 ## Bootstrap Decision
 Only after the checklist passes:
@@ -668,13 +668,13 @@ After that, add recommendation behavior as the next vertical slice.
 
 These decisions must be resolved before or during the indicated step:
 
-1. **Calendar in MVP navigation** - decide after low-fi wireframe validation.
-2. **Importance representation** - recommended LOW / NORMAL / HIGH.
-3. **Scheduling V1 rules** - define exact buckets, weighting, and tie-breakers before coding.
-4. **Available-time model** - recommended to avoid detailed availability scheduling in MVP.
-5. **Authentication** - recommended simple application-owned email/password for the portfolio MVP.
-6. **Task deletion** - requirements currently guarantee complete/reopen and edit; decide whether hard delete is actually necessary for MVP.
-7. **Course management surface** - decide whether it needs a dedicated screen or can remain lightweight within task flows.
+1. **Calendar in MVP navigation** - resolved: deferred; primary navigation is Today + Tasks.
+2. **Importance representation** - resolved: LOW / NORMAL / HIGH; nullable when not explicitly selected.
+3. **Scheduling V1 rules** - resolved in `docs/architecture/scheduling-rules.md`.
+4. **Available-time model** - resolved: no detailed availability calendar in MVP; use conservative clock-time pressure only.
+5. **Authentication** - resolved: application-owned email/password with Spring Security server sessions; see ADR 0002.
+6. **Task deletion** - resolved: no hard delete in the first MVP; use edit, complete, and reopen.
+7. **Course management surface** - resolved: lightweight secondary modal/sheet or embedded interaction; no primary navigation route.
 
 ---
 
@@ -691,15 +691,9 @@ The current documents agree on these points:
 - Integrations such as Classroom and Teams are later features.
 
 ## Gaps Requiring Design Decisions
-No blocking contradiction was found, but the following are intentionally underspecified:
-- exact scheduling formula/rules
-- precise at-risk definition
-- authentication implementation
-- whether Calendar is part of the first MVP navigation
-- whether users can delete tasks in MVP
-- how exact start-time recommendations should work without requiring users to maintain a detailed availability calendar
+No blocking product or architecture contradiction remains before project bootstrap.
 
-These should remain explicit decisions rather than being silently invented during coding.
+Implementation details may still evolve through normal coding feedback, but the core MVP behavior, ownership model, scheduling rules, persistence model, API boundary, authentication approach, and frontend flow are defined.
 
 ---
 

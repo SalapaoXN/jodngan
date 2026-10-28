@@ -16,6 +16,13 @@ Detailed execution plan: `docs/plans/pre-implementation-plan.md`
 - Record major architectural decisions as ADRs.
 
 ## Phase 2 - Project Foundation
+Status: complete. Slice 0 foundation is verified and ready for Slice 1.
+
+Bootstrap references:
+- `docs/plans/bootstrap-spec.md`
+- `docs/plans/vertical-slices.md`
+- `docs/plans/codex-bootstrap-task.md`
+
 - Bootstrap Spring Boot backend and React + TypeScript frontend.
 - Configure PostgreSQL and database migrations.
 - Add validation, error handling, logging, and test foundations.
