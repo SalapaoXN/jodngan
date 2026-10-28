@@ -7,6 +7,8 @@
 - Define success criteria for the first usable version.
 
 ## Phase 1 - UX and System Design
+Detailed execution plan: `docs/plans/pre-implementation-plan.md`
+
 - Create the primary user flow.
 - Produce low-fidelity wireframes before implementation.
 - Define domain model and module boundaries.
