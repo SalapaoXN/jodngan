@@ -54,10 +54,11 @@ Authenticated users:
 ```
 
 On application startup:
-1. request `/api/auth/me`
-2. show an app-level loading state while session status is unknown
-3. redirect unauthenticated users to Sign In
-4. redirect authenticated users away from Sign In/Register to Today
+1. request `GET /api/csrf`
+2. request `/api/auth/me`
+3. show an app-level loading state while session status is unknown
+4. redirect unauthenticated users to Sign In
+5. redirect authenticated users away from Sign In/Register to Today
 
 Do not store password or session secrets in localStorage.
 
@@ -336,6 +337,13 @@ Use one small HTTP client wrapper responsible for:
 - CSRF header behavior
 - normalized error parsing
 - credentials/session cookie behavior
+
+CSRF client behavior for the SPA:
+- fetch `GET /api/csrf` on application initialization
+- keep the returned token/header name in memory only
+- automatically attach the CSRF header to unsafe methods
+- fetch a fresh token after registration, login, and logout
+- never store CSRF tokens, session IDs, or passwords in localStorage/sessionStorage
 
 Do not create one generic abstraction layer per endpoint solely for architectural symmetry.
 

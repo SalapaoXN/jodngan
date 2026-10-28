@@ -29,6 +29,8 @@ Bootstrap references:
 - Add local development configuration without committing secrets.
 
 ## Phase 3 - Core Product
+Current implementation task: `docs/plans/codex-auth-task.md`
+
 - User account and authentication.
 - Course management.
 - Task and deadline management.

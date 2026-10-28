@@ -54,6 +54,8 @@ Because authentication uses browser cookies, CSRF protection remains enabled.
 
 The React client must use the Spring Security CSRF token mechanism for unsafe requests.
 
+For the SPA, expose a public `GET /api/csrf` token endpoint, keep the token in frontend memory only, attach its returned header on unsafe requests, and fetch a fresh token after registration, login, and logout.
+
 Do not solve integration inconvenience by disabling CSRF globally.
 
 ## Registration Time Zone

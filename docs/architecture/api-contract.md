@@ -81,6 +81,27 @@ Do not return stack traces, password hashes, SQL details, or secrets.
 
 # Authentication
 
+## GET /api/csrf
+Return the current Spring Security CSRF token metadata for the browser client.
+
+This endpoint is public because registration and login are CSRF-protected state-changing requests.
+
+### Response - 200
+
+```json
+{
+  "headerName": "X-CSRF-TOKEN",
+  "parameterName": "_csrf",
+  "token": "server-generated-token"
+}
+```
+
+The frontend keeps the token in memory and sends it using `headerName` on unsafe requests.
+
+Fetch a fresh token on application initialization and again after successful registration, login, or logout because authentication/logout may clear the previous CSRF token.
+
+---
+
 ## POST /api/auth/register
 Create an account and establish an authenticated session.
 
@@ -557,7 +578,8 @@ Reason: students may record already-overdue work and need JodNgan to surface it 
 
 ## Registration
 - syntactically valid email
-- accepted password policy
+- password required with a minimum of 8 characters
+- no arbitrary uppercase/digit/symbol composition requirement
 - valid IANA time-zone identifier
 
 ---
