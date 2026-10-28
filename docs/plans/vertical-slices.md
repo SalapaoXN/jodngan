@@ -48,6 +48,8 @@ A fresh developer can reproduce the foundation from repository instructions.
 
 # Slice 1 - Quick Add + Remaining Time
 
+**Status: complete and verified end to end.**
+
 ## Goal
 Prove the Notes-speed capture value with the smallest usable Task flow.
 
@@ -85,6 +87,8 @@ A person can open JodNgan, add a Task immediately without creating an account, a
 ---
 
 # Slice 2 - Scheduling Engine + Today
+
+**Status: complete and verified.**
 
 ## Goal
 Deliver the core differentiator early: tell the user what to work on next.

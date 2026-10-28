@@ -10,9 +10,12 @@ public class SecurityConfiguration {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/health").permitAll()
-                .anyRequest().authenticated());
+        // Private single-user trial only. Revisit this filter chain in the authentication slice.
+        http
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/**").permitAll()
+                        .anyRequest().denyAll());
 
         return http.build();
     }

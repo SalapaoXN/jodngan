@@ -1,0 +1,277 @@
+package com.jodngan.task;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Import(TaskApiIntegrationTests.FixedClockConfiguration.class)
+@Testcontainers(disabledWithoutDocker = true)
+class TaskApiIntegrationTests {
+
+    private static final Instant FIXED_NOW = Instant.parse("2026-10-29T00:00:00Z");
+
+    @Container
+    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18-alpine")
+            .withDatabaseName("jodngan")
+            .withUsername("jodngan")
+            .withPassword("test-password");
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private Flyway flyway;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void clearTasks() {
+        jdbcTemplate.update("DELETE FROM tasks");
+    }
+
+    @DynamicPropertySource
+    static void configureDataSource(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+    }
+
+    @Test
+    void flywayCreatesOnlyTheSliceOneTaskSchema() {
+        assertTrue(Arrays.stream(flyway.info().applied())
+                .anyMatch(migration -> migration.getVersion() != null
+                        && "1".equals(migration.getVersion().getVersion())));
+        assertEquals(0L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.tables "
+                        + "WHERE table_schema = 'public' AND table_name = 'users'",
+                Long.class));
+        assertEquals(0L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.columns "
+                        + "WHERE table_schema = 'public' AND table_name = 'tasks' "
+                        + "AND column_name IN ('user_id', 'course_id', 'estimated_minutes', 'importance', 'notes')",
+                Long.class));
+    }
+
+    @Test
+    void createsTaskTrimsTitlePersistsItAndReturnsFutureDeadlineProgress() throws Exception {
+        Instant dueAt = FIXED_NOW.plusSeconds(86_400);
+        MvcResult result = postTask("  Database Assignment  ", dueAt)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("Database Assignment"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.dueAt").value(dueAt.toString()))
+                .andExpect(jsonPath("$.planning.remainingSeconds").value(86_400))
+                .andExpect(jsonPath("$.planning.overdue").value(false))
+                .andReturn();
+        JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
+
+        String persistedTitle = jdbcTemplate.queryForObject(
+                "SELECT title FROM tasks WHERE id = ?", String.class, UUID.fromString(response.get("id").asText()));
+        assertEquals("Database Assignment", persistedTitle);
+    }
+
+    @Test
+    void rejectsBlankTitleWithValidationEnvelope() throws Exception {
+        postTask("   ", FIXED_NOW.plusSeconds(60))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.title").exists());
+        assertEquals(0L, taskCount());
+    }
+
+    @Test
+    void rejectsTitlesLongerThanTwoHundredCharacters() throws Exception {
+        postTask("x".repeat(201), FIXED_NOW.plusSeconds(60))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.title").exists());
+        assertEquals(0L, taskCount());
+    }
+
+    @Test
+    void rejectsMissingDueAtWithValidationEnvelope() throws Exception {
+        mockMvc.perform(post("/api/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("title", "No due date"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.dueAt").exists());
+        assertEquals(0L, taskCount());
+    }
+
+    @Test
+    void acceptsPastDeadlineAndMarksItOverdue() throws Exception {
+        Instant dueAt = FIXED_NOW.minusSeconds(3 * 3_600L);
+        postTask("Past deadline", dueAt)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.planning.remainingSeconds").value(-10_800))
+                .andExpect(jsonPath("$.planning.overdue").value(true));
+        assertEquals(1L, taskCount());
+    }
+
+    @Test
+    void deadlineExactlyNowIsNotYetOverdue() throws Exception {
+        postTask("Due now", FIXED_NOW)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.planning.remainingSeconds").value(0))
+                .andExpect(jsonPath("$.planning.overdue").value(false));
+    }
+
+    @Test
+    void listsActiveTasksByDeadlineThenIdAndReturnsPlanningData() throws Exception {
+        postTask("Later", FIXED_NOW.plusSeconds(3_600)).andExpect(status().isCreated());
+        postTask("Early B", FIXED_NOW.plusSeconds(1_800)).andExpect(status().isCreated());
+        postTask("Early A", FIXED_NOW.plusSeconds(1_800)).andExpect(status().isCreated());
+
+        MvcResult result = mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(3))
+                .andExpect(jsonPath("$.items[0].planning.remainingSeconds").exists())
+                .andReturn();
+
+        JsonNode items = objectMapper.readTree(result.getResponse().getContentAsString()).get("items");
+        List<JsonNode> actual = new ArrayList<>();
+        items.forEach(actual::add);
+        List<JsonNode> expected = actual.stream()
+                .sorted(Comparator.comparing((JsonNode item) -> Instant.parse(item.get("dueAt").asText()))
+                        .thenComparing(item -> item.get("id").asText()))
+                .toList();
+        assertEquals(expected.stream().map(item -> item.get("id").asText()).toList(),
+                actual.stream().map(item -> item.get("id").asText()).toList());
+        assertTrue(actual.get(0).get("dueAt").asText().compareTo(actual.get(2).get("dueAt").asText()) < 0);
+        assertEquals("Later", actual.get(2).get("title").asText());
+    }
+
+    @Test
+    void getsTaskByIdAndReturnsNotFoundEnvelopeForUnknownId() throws Exception {
+        MvcResult result = postTask("Fetch this task", FIXED_NOW.plusSeconds(600))
+                .andExpect(status().isCreated())
+                .andReturn();
+        JsonNode created = objectMapper.readTree(result.getResponse().getContentAsString());
+        String id = created.get("id").asText();
+
+        mockMvc.perform(get("/api/tasks/{taskId}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.title").value("Fetch this task"));
+
+        mockMvc.perform(get("/api/tasks/{taskId}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
+    void todayReturnsEmptyRecommendationWhenThereAreNoActiveTasks() throws Exception {
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.generatedAt").value(FIXED_NOW.toString()))
+                .andExpect(jsonPath("$.primaryRecommendation").doesNotExist())
+                .andExpect(jsonPath("$.upcomingTasks.length()").value(0));
+    }
+
+    @Test
+    void todayRecommendsTheMostUrgentTaskWithReasonAndStartGuidance() throws Exception {
+        postTask("Later task", FIXED_NOW.plusSeconds(4 * 86_400L)).andExpect(status().isCreated());
+        postTask("Due soon", FIXED_NOW.plusSeconds(12 * 3_600L)).andExpect(status().isCreated());
+        postTask("Overdue task", FIXED_NOW.minusSeconds(60)).andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.generatedAt").value(FIXED_NOW.toString()))
+                .andExpect(jsonPath("$.primaryRecommendation.task.title").value("Overdue task"))
+                .andExpect(jsonPath("$.primaryRecommendation.task.planning.overdue").value(true))
+                .andExpect(jsonPath("$.primaryRecommendation.urgency").value("OVERDUE"))
+                .andExpect(jsonPath("$.primaryRecommendation.reasonCode").value("OVERDUE"))
+                .andExpect(jsonPath("$.primaryRecommendation.reason").value("เลยกำหนดส่งแล้ว"))
+                .andExpect(jsonPath("$.primaryRecommendation.startGuidance").value("START_NOW"))
+                .andExpect(jsonPath("$.upcomingTasks[0].task.title").value("Due soon"))
+                .andExpect(jsonPath("$.upcomingTasks[1].task.title").value("Later task"));
+    }
+
+    @Test
+    void todayExcludesCompletedTasksAndCapsUpcomingAtFive() throws Exception {
+        MvcResult completedResult = postTask("Completed urgent", FIXED_NOW.minusSeconds(60))
+                .andExpect(status().isCreated())
+                .andReturn();
+        UUID completedId = UUID.fromString(
+                objectMapper.readTree(completedResult.getResponse().getContentAsString()).get("id").asText());
+        jdbcTemplate.update(
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = ? WHERE id = ?",
+                java.sql.Timestamp.from(FIXED_NOW),
+                completedId);
+
+        for (int day = 1; day <= 7; day++) {
+            postTask("Active " + day, FIXED_NOW.plusSeconds(day * 86_400L))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.primaryRecommendation.task.title").value("Active 1"))
+                .andExpect(jsonPath("$.upcomingTasks.length()").value(5))
+                .andExpect(jsonPath("$.upcomingTasks[0].task.title").value("Active 2"))
+                .andExpect(jsonPath("$.upcomingTasks[4].task.title").value("Active 6"));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions postTask(String title, Instant dueAt)
+            throws Exception {
+        return mockMvc.perform(post("/api/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("title", title, "dueAt", dueAt.toString()))));
+    }
+
+    private long taskCount() {
+        return jdbcTemplate.queryForObject("SELECT count(*) FROM tasks", Long.class);
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class FixedClockConfiguration {
+
+        @Bean
+        @Primary
+        Clock fixedClock() {
+            return Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
+        }
+    }
+}

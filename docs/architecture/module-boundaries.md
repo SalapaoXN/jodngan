@@ -71,6 +71,7 @@ com.jodngan
 │   └── infrastructure
 │
 ├── scheduling
+│   ├── api
 │   ├── application
 │   └── domain
 │
@@ -221,24 +222,26 @@ Course public application contract only when validating/changing a Course assign
 ## Exposes to scheduling
 Scheduling should consume immutable planning projections rather than Task persistence objects.
 
-Conceptual contract:
+Current Slice 2 contract:
 
 ```text
-SchedulableTask
+TaskPlanningData
 - id
 - title
 - dueAt
-- estimatedMinutes?
-- importance?
-- status
 - createdAt
+- updatedAt
 ```
+
+The Task application boundary exposes only ACTIVE planning data. Later slices may add estimated effort and importance to this projection when those features become real requirements.
 
 Task remains the source of truth; scheduling does not own or mutate it.
 
 ---
 
 # scheduling Module
+
+The module exposes the Today HTTP boundary through `scheduling.api`, orchestration through `scheduling.application`, and persistence-independent ranking rules through `scheduling.domain`.
 
 ## Owns
 - Remaining-time calculation needed for planning responses

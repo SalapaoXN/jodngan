@@ -1,5 +1,8 @@
 # Codex Task: Implement Slice 1 Core Capture
 
+## Status
+Complete. The single-user Quick Add flow was manually verified end to end with PostgreSQL persistence and refresh survival. Backend integration tests passed 9/9 before final cleanup; frontend typecheck, lint, 7 tests, and production build passed. The retained foundation smoke test should remain part of normal Maven verification.
+
 ## Goal
 Implement JodNgan Slice 1 as a real single-user trial flow: open the app, add a Task quickly, persist it in PostgreSQL, and immediately see how much time remains until the deadline.
 

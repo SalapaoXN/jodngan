@@ -9,17 +9,30 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set('Accept', 'application/json');
+  if (init?.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(path, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      ...init?.headers,
-    },
     ...init,
+    credentials: init?.credentials ?? 'same-origin',
+    headers,
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, `Request failed with status ${response.status}`);
+    let message = `Request failed with status ${response.status}`;
+    try {
+      const body: unknown = await response.json();
+      if (typeof body === 'object' && body !== null && 'message' in body
+          && typeof body.message === 'string') {
+        message = body.message;
+      }
+    } catch {
+      // Keep the status-based message when the server did not return a JSON error envelope.
+    }
+    throw new ApiError(response.status, message);
   }
 
   if (response.status === 204) {

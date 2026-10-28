@@ -16,7 +16,7 @@ Detailed execution plan: `docs/plans/pre-implementation-plan.md`
 - Record major architectural decisions as ADRs.
 
 ## Phase 2 - Project Foundation
-Status: complete. Slice 0 foundation is verified and ready for Slice 1.
+Status: complete. Slice 0 foundation is verified.
 
 Bootstrap references:
 - `docs/plans/bootstrap-spec.md`
@@ -29,13 +29,19 @@ Bootstrap references:
 - Add local development configuration without committing secrets.
 
 ## Phase 3 - Core Product
-Current implementation task: `docs/plans/codex-core-task.md`
+Status: Slice 1 Core Capture and Slice 2 Scheduling Engine + Today are complete and verified.
+
+Completed implementation tasks:
+- `docs/plans/codex-core-task.md`
+- `docs/plans/codex-scheduling-task.md`
+
+Next target: Slice 3 Tasks + Lifecycle.
 
 Current mode: single-user trial. Authentication is deferred until the core planning flow is usable and tested.
 
-- Quick task capture and deadline management.
-- Remaining-time / overdue feedback.
-- Recommendation for what to work on next.
+- [x] Quick task capture and deadline management.
+- [x] Remaining-time / overdue feedback.
+- [x] Recommendation for what to work on next.
 - Task lifecycle and progressive planning fields.
 - Optional Course organization.
 - User account and authentication after the core value is proven.

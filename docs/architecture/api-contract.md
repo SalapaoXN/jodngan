@@ -334,31 +334,23 @@ courseId=<uuid>       optional
       "id": "7c40f037-9d59-4b54-839f-b324e92f3b8e",
       "title": "Database Assignment",
       "dueAt": "2026-10-31T16:59:00Z",
-      "course": null,
       "status": "ACTIVE",
-      "estimatedMinutes": null,
-      "importance": null,
+      "createdAt": "2026-10-28T14:00:00Z",
+      "updatedAt": "2026-10-28T14:00:00Z",
       "planning": {
         "remainingSeconds": 266400,
-        "remainingLabel": "เหลือ 3 วัน",
-        "dueToday": false,
-        "overdue": false,
-        "urgency": "HIGH",
-        "startGuidance": "START_TODAY",
-        "risk": {
-          "state": "INSUFFICIENT_DATA",
-          "reasonCode": "EFFORT_UNKNOWN",
-          "message": null
-        }
+        "overdue": false
       }
     }
   ]
 }
 ```
 
+This is the current Slice 1/2 Task list shape. Enriched Course, effort, importance, due-today, and risk fields belong to later slices.
+
 Ordering:
-- ACTIVE: due date ascending for browsing
-- COMPLETED: completed date descending
+- Current Slice 1/2: ACTIVE Tasks by due date ascending, then stable ID ordering
+- Later lifecycle slice: COMPLETED Tasks by completed date descending
 
 This endpoint is a Task list, not the scheduling ranking endpoint.
 
@@ -434,39 +426,30 @@ Return the data required by the Today screen in one request.
 
 ```json
 {
-  "generatedAt": "2026-10-28T15:00:00Z",
+  "generatedAt": "2026-10-29T01:00:00Z",
   "primaryRecommendation": {
     "task": {
       "id": "7c40f037-9d59-4b54-839f-b324e92f3b8e",
       "title": "Database Assignment",
       "dueAt": "2026-10-31T16:59:00Z",
-      "course": {
-        "id": "933fe6fd-55bc-447a-a40c-eaff32e24f67",
-        "name": "Data Warehouse"
-      },
       "status": "ACTIVE",
-      "estimatedMinutes": 360,
-      "importance": "HIGH",
+      "createdAt": "2026-10-28T14:00:00Z",
+      "updatedAt": "2026-10-28T14:00:00Z",
       "planning": {
-        "remainingSeconds": 72000,
-        "remainingLabel": "เหลือ 20 ชั่วโมง",
-        "dueToday": false,
-        "overdue": false,
-        "urgency": "CRITICAL",
-        "startGuidance": "START_NOW",
-        "risk": {
-          "state": "NO_CONFIRMED_RISK",
-          "reasonCode": null,
-          "message": null
-        }
+        "remainingSeconds": 230340,
+        "overdue": false
       }
     },
-    "reasonCode": "DUE_WITHIN_24_HOURS",
-    "reason": "ใกล้กำหนดส่งมาก"
+    "urgency": "HIGH",
+    "reasonCode": "DUE_SOON",
+    "reason": "กำหนดส่งใกล้เข้ามา",
+    "startGuidance": "START_TODAY"
   },
   "upcomingTasks": []
 }
 ```
+
+Slice 2 deliberately uses the minimal Task shape already implemented by Core Capture. Later slices may enrich the nested Task with Course, effort, importance, and risk data without moving recommendation ordering into the frontend.
 
 If no active Tasks exist:
 
@@ -482,7 +465,8 @@ If no active Tasks exist:
 - Backend owns recommendation ordering.
 - Frontend must not recompute the recommendation score.
 - `generatedAt` identifies the time used for the calculation.
-- Upcoming list should be intentionally short for the Today UI; initial implementation may cap it at 5.
+- `upcomingTasks` contains the next ranked Tasks after the primary recommendation and is capped at 5.
+- Each recommendation item carries backend-derived `urgency`, `reasonCode`, `reason`, and `startGuidance`; React displays these values and does not rerank Tasks.
 
 ---
 
