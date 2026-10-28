@@ -3,6 +3,8 @@
 ## Purpose
 Prepare JodNgan for implementation without writing application code prematurely. This plan turns the current product requirements and UX direction into concrete design artifacts that the backend, frontend, tests, and Codex can execute against consistently.
 
+Execution note: the current private trial intentionally validates the single-user core planning flow before authentication. `docs/plans/vertical-slices.md` is the source of truth for implementation order when this earlier plan conflicts with the revised slice sequence.
+
 Core product principle:
 
 > Capture work almost as quickly as Notes, then help the student decide what to work on next.
@@ -653,11 +655,12 @@ Only after the checklist passes:
 ## Recommended First Vertical Slice
 Implement one narrow end-to-end capability before building every layer separately:
 
-> Authenticated user creates a minimal task and sees it returned with calculated remaining-time information.
+> A single trial user opens JodNgan, creates a minimal task without signing in, and sees it returned with calculated remaining-time information.
 
 Why first:
 - directly validates the Notes-speed capture model
-- touches frontend, API, domain, persistence, validation, ownership, and derived time behavior
+- touches frontend, API, domain, persistence, validation, and derived time behavior
+- avoids spending the first product slice on account plumbing
 - does not require the full scheduling engine yet
 
 After that, add recommendation behavior as the next vertical slice.
@@ -672,7 +675,7 @@ These decisions must be resolved before or during the indicated step:
 2. **Importance representation** - resolved: LOW / NORMAL / HIGH; nullable when not explicitly selected.
 3. **Scheduling V1 rules** - resolved in `docs/architecture/scheduling-rules.md`.
 4. **Available-time model** - resolved: no detailed availability calendar in MVP; use conservative clock-time pressure only.
-5. **Authentication** - resolved: application-owned email/password with Spring Security server sessions; see ADR 0002.
+5. **Authentication** - design resolved but implementation deferred until the core single-user flow is complete; see ADR 0002 and `vertical-slices.md`.
 6. **Task deletion** - resolved: no hard delete in the first MVP; use edit, complete, and reopen.
 7. **Course management surface** - resolved: lightweight secondary modal/sheet or embedded interaction; no primary navigation route.
 

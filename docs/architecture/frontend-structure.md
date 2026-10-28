@@ -25,12 +25,14 @@ Do not add Redux or another global client-state store unless a concrete need app
 /tasks/:taskId
 ```
 
-Route meaning:
+Route meaning after authentication is added:
 - `/login` -> Sign In
 - `/register` -> Register
 - `/` -> Today
 - `/tasks` -> Tasks
 - `/tasks/:taskId` -> Task Detail
+
+Current single-user trial activates `/`, `/tasks`, and `/tasks/:taskId` directly. `/login` and `/register` are deferred and should not be implemented yet.
 
 Quick Add and Course Management are interaction surfaces rather than primary routes.
 
@@ -38,29 +40,17 @@ Quick Add and Course Management are interaction surfaces rather than primary rou
 
 # Authentication Routing
 
-Unauthenticated users:
+Authentication routing is deferred during the single-user trial.
 
-```text
-/login
-/register
-```
+Current startup behavior:
+1. open Today directly at `/`
+2. load the current single-user Task/Today data
+3. do not request `/api/auth/me` or `/api/csrf`
+4. do not redirect to Sign In/Register
 
-Authenticated users:
+When Slice 6 Authentication is implemented, restore the session-aware routing described by ADR 0002 without changing the core Today/Tasks interaction model.
 
-```text
-/
-/tasks
-/tasks/:taskId
-```
-
-On application startup:
-1. request `GET /api/csrf`
-2. request `/api/auth/me`
-3. show an app-level loading state while session status is unknown
-4. redirect unauthenticated users to Sign In
-5. redirect authenticated users away from Sign In/Register to Today
-
-Do not store password or session secrets in localStorage.
+Do not store future password or session secrets in localStorage.
 
 ---
 
@@ -338,7 +328,9 @@ Use one small HTTP client wrapper responsible for:
 - normalized error parsing
 - credentials/session cookie behavior
 
-CSRF client behavior for the SPA:
+CSRF client behavior is deferred with authentication. During the single-user trial there is no authenticated browser session and no CSRF-token bootstrap flow.
+
+When authentication is implemented:
 - fetch `GET /api/csrf` on application initialization
 - keep the returned token/header name in memory only
 - automatically attach the CSRF header to unsafe methods

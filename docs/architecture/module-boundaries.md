@@ -1,12 +1,12 @@
 # Backend Module Boundaries
 
 ## Status
-Accepted for MVP implementation.
+Target modular-monolith boundaries accepted. Current single-user trial implements `task` first; `identity`, `course`, and `scheduling` are added only when their slices begin.
 
 ## Architecture
 JodNgan backend is one Spring Boot deployable application organized as a modular monolith.
 
-Primary modules:
+Target modules:
 
 ```text
 identity
@@ -14,6 +14,8 @@ course
 task
 scheduling
 ```
+
+Current Slice 1 implements only `task` plus existing shared technical infrastructure. Do not create empty placeholder modules.
 
 Infrastructure shared across the application should stay small and technical rather than becoming a catch-all business module.
 
@@ -128,7 +130,7 @@ Domain code should not depend on infrastructure packages.
 
 ---
 
-# identity Module
+# identity Module (Deferred Until Authentication Slice)
 
 ## Owns
 - User account
@@ -162,7 +164,7 @@ Other modules should not need password hashes or authentication internals.
 
 ---
 
-# course Module
+# course Module (Deferred Until Course Slice)
 
 ## Owns
 - Course entity
@@ -202,8 +204,8 @@ Application behavior should remain consistent with that rule.
 ## Owns
 - Task entity/lifecycle
 - Task persistence
-- ownership-aware Task lookup
 - task CRUD operations required by MVP
+- ownership-aware Task lookup after authentication is introduced
 
 ## Main Use Cases
 - Quick Add Task
@@ -266,11 +268,13 @@ It must not:
 Receive one `Clock`/`Instant now` for a calculation.
 
 ## Today Query
-An application service may:
+During the single-user trial, an application service may:
 1. request active planning views from Task
-2. obtain User zone from authenticated context
+2. use the planning context supplied for the trial
 3. invoke SchedulingEngine
 4. compose Today response
+
+After authentication is added, the authenticated User time zone becomes the authoritative per-user zone.
 
 ---
 
@@ -300,9 +304,11 @@ This keeps external API changes from forcing persistence-model changes and preve
 
 ---
 
-# Ownership Rule
+# Ownership Rule (After Authentication)
 
-Every Task/Course application operation receives authenticated `userId`.
+The current private single-user trial has no account ownership boundary.
+
+After authentication is implemented, every Task/Course application operation receives authenticated `userId`.
 
 Preferred repository capability:
 
@@ -381,7 +387,7 @@ They are not part of MVP implementation.
 
 # Acceptance Checklist
 
-- [x] Entity ownership is unambiguous.
+- [x] Current single-user mode is explicit; future entity ownership rules are defined for the authentication slice.
 - [x] Controllers contain no business formulas.
 - [x] Scheduling is independently testable.
 - [x] Scheduling does not own Task persistence.

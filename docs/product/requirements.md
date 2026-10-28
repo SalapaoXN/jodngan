@@ -18,6 +18,9 @@ A student managing assignments, projects, and exams across multiple courses who 
 - Deterministic core: the MVP scheduling logic must work without AI.
 - Mobile-first UX: the primary flow should work comfortably on a phone-sized screen.
 
+## Current Trial Scope
+The immediate validation build is intentionally single-user. Authentication, account ownership, and cross-user isolation remain target requirements for the later production-oriented MVP, but they are deferred until the core capture/recommendation flow is proven useful.
+
 ## 4. MVP Functional Requirements
 
 ### FR-01 Quick Task Capture
@@ -84,8 +87,8 @@ The primary view answers, without requiring navigation through multiple screens:
 - How much time remains?
 - What is currently at risk?
 
-### FR-10 Authentication
-The production-oriented MVP supports a user account and authentication so each user's courses and tasks remain isolated.
+### FR-10 Authentication (Deferred Until Core Flow Is Complete)
+The later production-oriented MVP supports a user account and authentication so each user's courses and tasks remain isolated.
 
 Authentication must not make the normal post-login task-capture flow slower or more complex.
 
@@ -175,7 +178,7 @@ Acceptance Criteria:
 4. Course association can be changed later.
 5. Removing a course must not silently delete its tasks.
 
-### US-08 Use My Own Workspace Securely
+### US-08 Use My Own Workspace Securely (Deferred)
 **As a student, I want my tasks to belong to my account so that another user cannot access or modify them.**
 
 Acceptance Criteria:
@@ -224,4 +227,6 @@ Acceptance Criteria:
 These can be reconsidered only after the core quick-capture and recommendation flow is useful.
 
 ## 9. MVP Definition of Done
-The MVP is considered functionally complete when a user can sign in, quickly create assignments, see remaining time, receive an explainable recommendation, progressively add effort information, identify supported at-risk work, and complete tasks through a responsive end-to-end flow with automated coverage for core business rules.
+For the current private trial, the core-value milestone is complete when a person can open JodNgan without signing in, quickly create assignments, see remaining time, receive an explainable recommendation, progressively add effort information, and complete tasks through a responsive flow.
+
+For the later production-oriented MVP, add authentication and per-user isolation before considering the public/multi-user product complete.

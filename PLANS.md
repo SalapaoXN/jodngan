@@ -29,13 +29,16 @@ Bootstrap references:
 - Add local development configuration without committing secrets.
 
 ## Phase 3 - Core Product
-Current implementation task: `docs/plans/codex-auth-task.md`
+Current implementation task: `docs/plans/codex-core-task.md`
 
-- User account and authentication.
-- Course management.
-- Task and deadline management.
-- Estimated effort and priority calculation.
-- Schedule conflict detection.
+Current mode: single-user trial. Authentication is deferred until the core planning flow is usable and tested.
+
+- Quick task capture and deadline management.
+- Remaining-time / overdue feedback.
+- Recommendation for what to work on next.
+- Task lifecycle and progressive planning fields.
+- Optional Course organization.
+- User account and authentication after the core value is proven.
 
 ## Phase 4 - Scheduling Engine
 - Calculate recommended work order from deadline, effort, priority, and available time.

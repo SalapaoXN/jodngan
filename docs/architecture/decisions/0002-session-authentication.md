@@ -1,15 +1,15 @@
 # ADR 0002: Use Application-Owned Email/Password with Server Sessions
 
 ## Status
-Accepted for MVP implementation.
+Accepted design, deferred until the single-user core planning flow is complete.
 
 ## Context
-JodNgan needs per-user Task and Course isolation, but authentication should not distract from the core planning product or introduce unnecessary OAuth/provider complexity.
+JodNgan will eventually need per-user Task and Course isolation, but the current trial goal is to let one person use the core planning flow with minimum friction. Authentication should not block validation of the main product value.
 
 The frontend is a browser SPA and the backend is a Spring Boot application.
 
 ## Decision
-Use application-owned email/password authentication implemented with Spring Security and server-managed sessions.
+When authentication is introduced, use application-owned email/password authentication implemented with Spring Security and server-managed sessions. Until then, the trial build remains single-user and has no Sign In/Register flow.
 
 Key choices:
 - Email is the login identifier.

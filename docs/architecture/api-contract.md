@@ -1,7 +1,7 @@
 # REST API Contract
 
 ## Status
-Accepted for MVP implementation.
+Target MVP contract accepted. Current implementation is the single-user core trial; authentication/ownership and later Task/Course capabilities remain documented below but are deferred until their slices.
 
 ## Base Path
 
@@ -22,11 +22,11 @@ Content-Type: application/json
 ```
 
 ## Authentication
-Authenticated endpoints use the Spring Security session established by login/registration.
+Current trial mode is single-user and does not require authentication. Core Task/Today endpoints are usable without Sign In/Register while the app is being validated privately.
 
-The browser receives an HTTP-only session cookie.
+When the authentication slice is implemented, authenticated endpoints use the Spring Security session established by login/registration, the browser receives an HTTP-only session cookie, and unsafe requests use Spring Security CSRF protection.
 
-Unsafe requests use Spring Security CSRF protection. The frontend must send the configured CSRF token/header rather than disabling CSRF.
+The unauthenticated trial configuration is not intended for direct public-internet exposure.
 
 ## Time
 API timestamps use ISO-8601 absolute timestamps.
@@ -40,9 +40,9 @@ Example:
 The frontend converts the user's local date/time selection into an absolute timestamp before submission.
 
 ## User-Owned Resources
-Resource lookup always includes the authenticated User ownership boundary.
+Ownership is deferred during the single-user trial.
 
-When a Task/Course exists but belongs to another User, respond as not found rather than revealing resource existence.
+After authentication is introduced, resource lookup always includes the authenticated User ownership boundary. When a Task/Course exists but belongs to another User, respond as not found rather than revealing resource existence.
 
 ---
 
@@ -79,7 +79,7 @@ Do not return stack traces, password hashes, SQL details, or secrets.
 
 ---
 
-# Authentication
+# Authentication (Deferred Until Core Flow Is Complete)
 
 ## GET /api/csrf
 Return the current Spring Security CSRF token metadata for the browser client.
@@ -197,6 +197,28 @@ Return the current authenticated user.
 
 # Task Representation
 
+## Current Slice 1 Task
+The single-user trial initially returns only fields needed for capture and deadline feedback:
+
+```json
+{
+  "id": "7c40f037-9d59-4b54-839f-b324e92f3b8e",
+  "title": "Database Assignment",
+  "dueAt": "2026-10-31T16:59:00Z",
+  "status": "ACTIVE",
+  "createdAt": "2026-10-28T14:00:00Z",
+  "updatedAt": "2026-10-28T14:00:00Z",
+  "planning": {
+    "remainingSeconds": 266400,
+    "overdue": false
+  }
+}
+```
+
+`remainingSeconds` and `overdue` are derived and are not persisted.
+
+The richer representations below are target shapes introduced progressively by later slices.
+
 ## Task Summary
 Used by Today and Tasks lists.
 
@@ -269,47 +291,38 @@ Adds editable fields:
 ## POST /api/tasks
 Quick Add endpoint.
 
-### Request
+### Request - Current Slice 1
 
 ```json
 {
   "title": "Database Assignment",
-  "dueAt": "2026-10-31T16:59:00Z",
-  "courseId": "933fe6fd-55bc-447a-a40c-eaff32e24f67"
+  "dueAt": "2026-10-31T16:59:00Z"
 }
 ```
 
-`courseId` is optional.
+Current Quick Add does not require Course, estimated effort, importance, notes, or authentication.
 
-The endpoint does not require:
-- estimated effort
-- importance
-- notes
+`courseId` is added later when the Course slice is implemented.
 
 ### Response - 201
-Returns Task Detail with derived planning data immediately.
+Returns the current Task representation with derived remaining-time data immediately.
 
-### Errors
+### Errors - Current Slice 1
 - `400 VALIDATION_ERROR`
-- `404 RESOURCE_NOT_FOUND` if supplied Course does not belong to the User or does not exist
-- `401 UNAUTHENTICATED`
 
 ---
 
 ## GET /api/tasks
-List Tasks owned by the authenticated User.
+List Tasks in the current single-user dataset. After authentication is introduced, this becomes ownership-scoped to the authenticated User.
 
 ### Query Parameters
+Current Slice 1 has no required query parameters and returns ACTIVE Tasks only.
+
+Later slices add:
 
 ```text
 status=ACTIVE|COMPLETED
 courseId=<uuid>       optional
-```
-
-Default status:
-
-```text
-ACTIVE
 ```
 
 ### Response - 200
@@ -357,13 +370,14 @@ Return one Task Detail.
 ### Response - 200
 Task Detail representation.
 
-### Errors
+### Errors - Current Slice 1
 - `404 RESOURCE_NOT_FOUND`
-- `401 UNAUTHENTICATED`
+
+Authentication adds `401 UNAUTHENTICATED` later.
 
 ---
 
-## PUT /api/tasks/{taskId}
+## PUT /api/tasks/{taskId} (Later Slice)
 Replace the editable Task fields from Task Detail.
 
 ### Request
@@ -391,7 +405,7 @@ Returns updated Task Detail with recalculated planning data.
 
 ---
 
-## POST /api/tasks/{taskId}/complete
+## POST /api/tasks/{taskId}/complete (Later Slice)
 Mark Task complete.
 
 The operation is idempotent from the client's point of view. Completing an already completed owned Task returns its current completed state.
@@ -401,7 +415,7 @@ Returns updated Task Detail.
 
 ---
 
-## POST /api/tasks/{taskId}/reopen
+## POST /api/tasks/{taskId}/reopen (Later Slice)
 Return Task to ACTIVE state.
 
 The operation is idempotent from the client's point of view.
@@ -411,7 +425,7 @@ Returns updated Task Detail with recalculated planning data.
 
 ---
 
-# Today / Recommendation
+# Today / Recommendation (Slice 2)
 
 ## GET /api/today
 Return the data required by the Today screen in one request.
@@ -472,7 +486,7 @@ If no active Tasks exist:
 
 ---
 
-# Courses
+# Courses (Slice 5)
 
 ## Course Representation
 
@@ -566,7 +580,7 @@ No response body.
 - dueAt required and parseable
 - estimatedMinutes must be greater than zero when supplied
 - importance must be LOW, NORMAL, HIGH, or null
-- courseId must reference a Course owned by authenticated User
+- courseId must reference an existing Course; ownership is additionally enforced after authentication is introduced
 
 Creating a Task whose deadline is already in the past is allowed.
 
@@ -592,7 +606,7 @@ Reason: students may record already-overdue work and need JodNgan to surface it 
 | resource created | 201 |
 | successful no-content action | 204 |
 | request validation failed | 400 |
-| not authenticated / invalid login | 401 |
+| not authenticated / invalid login (after authentication slice) | 401 |
 | owned resource not found or inaccessible | 404 |
 | duplicate email / explicit conflict | 409 |
 | unexpected server error | 500 |
@@ -619,7 +633,7 @@ Not included:
 - [x] Optional planning fields can be added/cleared later.
 - [x] Scheduling logic remains server-side.
 - [x] Today can render from one endpoint.
-- [x] User ownership is enforced on every owned-resource operation.
+- [x] User ownership is defined for the later authentication slice; single-user trial intentionally has no ownership boundary.
 - [x] Task complete/reopen are explicit and idempotent.
 - [x] Course removal preserves Tasks.
 - [x] Error shape is consistent.

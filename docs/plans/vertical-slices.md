@@ -5,6 +5,8 @@ Implement JodNgan as working end-to-end behavior instead of building every backe
 
 Each slice should leave the repository in a runnable, tested state.
 
+Current trial mode is intentionally single-user: no Sign In/Register screen, no session requirement, and no ownership boundary until the core planning flow is proven useful. Do not expose this trial build directly to the public internet.
+
 ---
 
 # Slice 0 - Foundation
@@ -44,79 +46,78 @@ A fresh developer can reproduce the foundation from repository instructions.
 
 ---
 
-# Slice 1 - Authentication
+# Slice 1 - Quick Add + Remaining Time
 
 ## Goal
-Give every later feature a real user ownership boundary.
+Prove the Notes-speed capture value with the smallest usable Task flow.
 
 ## Backend
 Implement:
-- User persistence
-- V1 users migration
-- email normalization
-- password encoding
-- register
-- login
-- logout
-- current user
-- Spring Security session configuration
-- CSRF handling
-
-## Frontend
-Implement:
-- Sign In page
-- Register page
-- current-user query
-- AuthGuard
-- logout behavior
-
-## Tests
-- password never stored plaintext
-- duplicate email
-- invalid login generic response
-- unauthenticated protected request
-- session survives normal navigation/request
-- CSRF protects mutation
-
-## Done When
-A user can register, become authenticated, refresh, and access only authenticated routes.
-
----
-
-# Slice 2 - Quick Add + Remaining Time
-
-## Goal
-Prove the central Notes-speed capture value with the smallest complete Task flow.
-
-## Backend
-Implement:
-- Task domain minimum: title, dueAt, status, ownership
-- V3 Task migration as needed after Course dependency planning
+- single-user Task persistence
+- first Task migration
+- Task minimum: title, dueAt, status, timestamps
 - create Task
-- get Task
+- list/get Task
 - remaining-time calculation
-- overdue/due-today display data
+- overdue display data
 
-Course may remain null for this first Task slice.
+No User, Course, authentication, ownership, effort, importance, or notes are required yet.
 
 ## Frontend
 Implement:
+- app opens directly to Today
 - Today empty state
-- Quick Add with title + due date/time
+- Quick Add with task name + due date/time
 - save
 - display created Task immediately
-- remaining-time label
+- remaining-time / overdue label
 
 ## Tests
 - minimal Task creation
 - title required
 - deadline required
 - past deadline allowed and shown overdue
-- timezone-aware due-today
-- cross-user Task inaccessible
+- remaining time uses an injectable/fixed clock in tests
 
 ## Done When
-An authenticated user can add a Task quickly and immediately see useful deadline information.
+A person can open JodNgan, add a Task immediately without creating an account, and see useful deadline information.
+
+---
+
+# Slice 2 - Scheduling Engine + Today
+
+## Goal
+Deliver the core differentiator early: tell the user what to work on next.
+
+## Backend
+Implement the deterministic scheduling behavior that can operate with deadline-only Tasks first:
+- urgency bands
+- deterministic ranking
+- tie-breakers
+- recommendation reason
+- start guidance
+- Today query service
+- `GET /api/today`
+
+Effort and importance remain unknown in this slice and must not be required.
+
+## Frontend
+Implement:
+- RecommendationCard
+- recommendation reason
+- start guidance presentation
+- short upcoming list
+- Today normal/empty/error states
+
+## Tests
+- overdue
+- deadline boundary cases
+- identical score tie-breaks
+- completed Task exclusion when lifecycle exists
+- same Task state + fixed time produces the same recommendation
+
+## Done When
+The trial user can add multiple Tasks and JodNgan clearly answers which one should be worked on next.
 
 ---
 
@@ -154,19 +155,57 @@ The user can maintain the full required Task lifecycle without hard deletion.
 
 ---
 
-# Slice 4 - Courses
+# Slice 4 - Progressive Enrichment + Risk
 
 ## Goal
-Add optional organization without slowing Quick Add.
+Make recommendations smarter without increasing initial capture friction.
+
+## Backend
+Implement/edit support for:
+- estimatedMinutes
+- importance
+- notes
+- effort-pressure calculation
+- risk assessment rules
+
+Recommendation must update immediately when effort/importance changes.
+
+## Frontend
+Task Detail adds:
+- estimated effort
+- importance
+- notes
+- risk explanation
+- limited-data explanation when effort is unknown
+
+Quick Add remains title + due date/time only.
+
+## Tests
+- adding effort can change ranking
+- removing effort returns to deadline-based behavior
+- importance adjustment works
+- conservative AT_RISK rule
+- effort unknown -> INSUFFICIENT_DATA
+- overdue -> AT_RISK
+
+## Done When
+The user can improve recommendation quality after capture while initial entry stays fast.
+
+---
+
+# Slice 5 - Courses
+
+## Goal
+Add optional organization only after the planning loop already works.
 
 ## Backend
 Implement:
 - Course entity/persistence
-- V2 Course migration if migrations are created in schema order from the start
 - create/list/rename/remove Course
-- Course ownership lookup contract
 - optional Task course assignment
 - Course deletion leaves Tasks unassigned
+
+No ownership rules are required until the authentication slice.
 
 ## Frontend
 Implement:
@@ -178,84 +217,50 @@ Implement:
 
 ## Tests
 - Task creation works without Course
-- another user's Course cannot be assigned
+- Course assignment works
 - remove Course preserves Tasks
-- Course filter is ownership scoped
+- Course filter works
 
 ## Done When
 Course improves organization but never becomes a prerequisite for capture.
 
 ---
 
-# Slice 5 - Scheduling Engine + Today
+# Slice 6 - Authentication + Ownership
 
 ## Goal
-Deliver the core differentiator: tell the user what to work on next.
+Add accounts only after the core planning product is useful enough to justify multi-user persistence.
 
 ## Backend
-Implement pure scheduling domain behavior from `scheduling-rules.md`:
-- urgency bands
-- importance adjustment
-- effort-pressure calculation infrastructure
-- deterministic score/ranking
-- tie-breakers
-- recommendation reason
-- start guidance
-- Today query service
-- `GET /api/today`
-
-At this slice, unknown effort must already work correctly.
+Implement according to ADR 0002:
+- User persistence
+- email normalization
+- password encoding
+- register/login/logout/current user
+- Spring Security server sessions
+- CSRF handling
+- Task/Course ownership
+- safe migration/claim strategy for any existing single-user trial data if preservation is required
 
 ## Frontend
 Implement:
-- RecommendationCard
-- recommendation reason
-- start guidance presentation
-- short upcoming list
-- Today normal/empty/error states
+- Sign In
+- Register
+- current-user query
+- AuthGuard
+- logout
 
 ## Tests
-Implement all scheduling boundary tests before considering this slice complete.
+- password never stored plaintext
+- duplicate email
+- invalid login generic response
+- unauthenticated protected request
+- session survives normal requests
+- CSRF protects mutations
+- cross-user Task/Course access rejected
 
 ## Done When
-The same Task state and fixed time always produce the same explainable recommendation.
-
----
-
-# Slice 6 - Progressive Enrichment + Risk
-
-## Goal
-Make planning smarter without increasing initial capture friction.
-
-## Backend
-Implement/edit support for:
-- estimatedMinutes
-- importance
-- notes
-- risk assessment rules
-
-Recommendation must update immediately when effort/importance changes.
-
-## Frontend
-Task Detail adds:
-- estimated effort
-- importance
-- notes
-- risk explanation
-- limited-data explanation when effort unknown
-
-Quick Add remains unchanged except optional Course.
-
-## Tests
-- adding effort can change ranking
-- removing effort returns to deadline-based behavior
-- importance adjustment works
-- conservative AT_RISK rule
-- effort unknown -> INSUFFICIENT_DATA
-- overdue -> AT_RISK
-
-## Done When
-The user can improve recommendation quality after capture while the initial flow stays lightweight.
+Accounts work without changing the already-proven capture and planning experience.
 
 ---
 
@@ -280,8 +285,7 @@ Turn the working MVP into a portfolio-quality implementation.
 Critical Playwright journey:
 
 ```text
-register
-→ quick add
+quick add
 → see remaining time
 → see recommendation
 → add effort
@@ -312,4 +316,4 @@ For every slice:
 5. Inspect diff for scope creep.
 6. Update docs only when an implementation decision materially changes the agreed design.
 
-Do not begin optional Classroom, Teams, AI, Calendar sync, or notification work before Slice 7 is stable.
+Do not begin optional Classroom, Teams, AI, Calendar sync, or notification work before Slice 7 is stable. Do not pull authentication forward again unless the single-user core is already usable or a concrete multi-user requirement appears.
