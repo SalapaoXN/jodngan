@@ -16,6 +16,9 @@ class CourseEntity {
     @Id
     private UUID id;
 
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
     @Column(nullable = false, length = 120)
     private String name;
 
@@ -30,6 +33,7 @@ class CourseEntity {
 
     private CourseEntity(Course course) {
         id = course.id();
+        userId = course.userId();
         name = course.name();
         createdAt = course.createdAt();
         updatedAt = course.updatedAt();
@@ -40,6 +44,6 @@ class CourseEntity {
     }
 
     Course toDomain() {
-        return new Course(id, name, createdAt, updatedAt);
+        return new Course(id, userId, name, createdAt, updatedAt);
     }
 }

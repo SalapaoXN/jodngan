@@ -8,7 +8,7 @@ import com.jodngan.course.domain.Course;
 
 public interface CourseRepository {
     Course save(Course course);
-    List<Course> findAll();
-    Optional<Course> findById(UUID id);
-    void deleteById(UUID id);
+    List<Course> findAll(UUID userId);
+    Optional<Course> findById(UUID userId, UUID id);
+    void deleteById(UUID userId, UUID id);
 }

@@ -1,7 +1,7 @@
 # REST API Contract
 
 ## Status
-Target MVP contract accepted. Current implementation is the single-user trial through Slice 5, including Course organization. Authentication and ownership remain deferred until Slice 6.
+Target MVP contract accepted. Slice 6 implements session authentication, CSRF protection, and per-user Task/Course ownership on top of the core planning API.
 
 ## Base Path
 
@@ -22,11 +22,9 @@ Content-Type: application/json
 ```
 
 ## Authentication
-Current trial mode is single-user and does not require authentication. Core Task/Today endpoints are usable without Sign In/Register while the app is being validated privately.
+`GET /api/csrf`, `POST /api/auth/register`, and `POST /api/auth/login` are public. Other `/api/**` endpoints require the Spring Security session established by login/registration.
 
-When the authentication slice is implemented, authenticated endpoints use the Spring Security session established by login/registration, the browser receives an HTTP-only session cookie, and unsafe requests use Spring Security CSRF protection.
-
-The unauthenticated trial configuration is not intended for direct public-internet exposure.
+The browser receives an HTTP-only session cookie. Unsafe requests use Spring Security CSRF protection and must include the current token header returned by `/api/csrf`.
 
 ## Time
 API timestamps use ISO-8601 absolute timestamps.
@@ -40,9 +38,7 @@ Example:
 The frontend converts the user's local date/time selection into an absolute timestamp before submission.
 
 ## User-Owned Resources
-Ownership is deferred during the single-user trial.
-
-After authentication is introduced, resource lookup always includes the authenticated User ownership boundary. When a Task/Course exists but belongs to another User, respond as not found rather than revealing resource existence.
+Resource lookup includes the authenticated User ownership boundary. When a Task/Course exists but belongs to another User, respond as not found rather than revealing resource existence. Course assignment also validates that the Course belongs to the same authenticated User.
 
 ---
 
@@ -68,6 +64,7 @@ All application errors should use one consistent envelope.
 ```text
 VALIDATION_ERROR
 UNAUTHENTICATED
+FORBIDDEN
 INVALID_CREDENTIALS
 RESOURCE_NOT_FOUND
 EMAIL_ALREADY_EXISTS
@@ -79,7 +76,7 @@ Do not return stack traces, password hashes, SQL details, or secrets.
 
 ---
 
-# Authentication (Deferred Until Core Flow Is Complete)
+# Authentication (Slice 6)
 
 ## GET /api/csrf
 Return the current Spring Security CSRF token metadata for the browser client.
@@ -197,8 +194,8 @@ Return the current authenticated user.
 
 # Task Representation
 
-## Current Slice 1-5 Task
-The single-user trial returns capture, lifecycle, optional planning enrichment, and conservative risk data:
+## Current Slice 6 Task
+The authenticated API returns capture, lifecycle, optional Course/planning enrichment, and conservative risk data scoped to the current User:
 
 ```json
 {
@@ -230,7 +227,7 @@ The single-user trial returns capture, lifecycle, optional planning enrichment, 
 
 `remainingSeconds`, `overdue`, and `risk` are derived and are not persisted. `estimatedMinutes`, `importance`, and `notes` are nullable and may be cleared by sending `null` (or omitting them from the current full-replacement update payload). Completed Tasks return no active risk assessment.
 
-`course` is nullable. Task create/update accepts nullable `courseId`; a supplied ID must reference an existing Course. Course ownership is added later with authentication.
+`course` is nullable. Task create/update accepts nullable `courseId`; a supplied ID must reference a Course owned by the authenticated User.
 
 ## Task Summary
 Used by Today and Tasks lists.
@@ -304,7 +301,7 @@ The same current representation supports unassigned Tasks and missing optional p
 ## POST /api/tasks
 Quick Add endpoint.
 
-### Request - Current Slice 5
+### Request - Current Slice 6
 
 ```json
 {
@@ -314,22 +311,23 @@ Quick Add endpoint.
 }
 ```
 
-`courseId` is optional and may be `null` or omitted. Quick Add still does not require estimated effort, importance, notes, or authentication.
+`courseId` is optional and may be `null` or omitted. Quick Add still does not require estimated effort, importance, or notes, but the endpoint requires an authenticated session.
 
 ### Response - 201
 Returns the current Task representation with derived remaining-time data immediately.
 
-### Errors - Current Slice 5
+### Errors - Current Slice 6
 - `400 VALIDATION_ERROR`
-- `404 RESOURCE_NOT_FOUND` when a supplied `courseId` does not exist
+- `401 UNAUTHENTICATED`
+- `404 RESOURCE_NOT_FOUND` when a supplied `courseId` is missing or belongs to another User
 
 ---
 
 ## GET /api/tasks
-List Tasks in the current single-user dataset. After authentication is introduced, this becomes ownership-scoped to the authenticated User.
+List Tasks owned by the authenticated User.
 
 ### Query Parameters
-Slice 5 supports lifecycle and optional Course filtering:
+Slice 6 supports lifecycle and optional Course filtering within the authenticated User's data:
 
 ```text
 status=ACTIVE|COMPLETED   optional, defaults to ACTIVE
@@ -358,7 +356,7 @@ courseId=UUID             optional
 }
 ```
 
-The current Slice 5 Task list uses the same Task representation, including nullable Course summary, effort, importance, notes, and conservative risk. Due-today display enrichment remains separate from this endpoint.
+The current Slice 6 Task list uses the same Task representation, scoped to the authenticated User, including nullable Course summary, effort, importance, notes, and conservative risk. Due-today display enrichment remains separate from this endpoint.
 
 Ordering:
 - ACTIVE Tasks by due date ascending, then stable ID ordering
@@ -369,22 +367,21 @@ This endpoint is a Task list, not the scheduling ranking endpoint.
 ---
 
 ## GET /api/tasks/{taskId}
-Return one Task Detail using the current Slice 5 representation above, including `completedAt`, nullable Course summary, optional effort/importance/notes, and derived risk.
+Return one Task Detail using the current Slice 6 representation above, including `completedAt`, nullable Course summary, optional effort/importance/notes, and derived risk.
 
 ### Response - 200
 Current Task representation.
 
-### Errors - Current Slice 3
-- `404 RESOURCE_NOT_FOUND`
-
-Authentication adds `401 UNAUTHENTICATED` later.
+### Errors - Current Slice 6
+- `401 UNAUTHENTICATED`
+- `404 RESOURCE_NOT_FOUND` for missing or cross-user Task
 
 ---
 
-## PUT /api/tasks/{taskId} (Slice 5)
+## PUT /api/tasks/{taskId} (Slice 6)
 Edit core Task fields, optional Course assignment, and optional planning enrichment from Task Detail.
 
-### Request - Current Slice 5
+### Request - Current Slice 6
 
 ```json
 {
@@ -402,11 +399,10 @@ Edit core Task fields, optional Course assignment, and optional planning enrichm
 ### Response - 200
 Returns the updated current Task representation with recalculated deadline, recommendation input, and risk data.
 
-### Errors - Current Slice 5
+### Errors - Current Slice 6
 - `400 VALIDATION_ERROR`
-- `404 RESOURCE_NOT_FOUND`
-
-Authentication adds `401 UNAUTHENTICATED` later.
+- `401 UNAUTHENTICATED`
+- `404 RESOURCE_NOT_FOUND` for missing/cross-user Task or Course assignment
 
 ---
 
@@ -466,7 +462,7 @@ Return the data required by the Today screen in one request.
 }
 ```
 
-The Today response is now enriched through Slice 5 with optional Course, effort, importance, and risk data. Course is display context only and does not affect recommendation scoring or risk. Recommendation ordering remains backend-owned.
+The Today response is scoped to the authenticated User and enriched with optional Course, effort, importance, and risk data. Course is display context only and does not affect recommendation scoring or risk. Recommendation ordering remains backend-owned.
 
 If no active Tasks exist:
 
@@ -516,13 +512,12 @@ Returns Course representation.
 
 ### Errors
 - `400 VALIDATION_ERROR`
-
-Authentication adds `401 UNAUTHENTICATED` later.
+- `401 UNAUTHENTICATED`
 
 ---
 
 ## GET /api/courses
-Return Courses in the current single-user dataset. After authentication is introduced, this becomes ownership-scoped to the authenticated User.
+Return Courses owned by the authenticated User.
 
 ### Response - 200
 
@@ -582,7 +577,7 @@ No response body.
 - dueAt required and parseable
 - estimatedMinutes must be greater than zero when supplied
 - importance must be LOW, NORMAL, HIGH, or null
-- courseId must reference an existing Course; ownership is additionally enforced after authentication is introduced
+- courseId must reference a Course owned by the authenticated User
 
 Creating a Task whose deadline is already in the past is allowed.
 
@@ -608,7 +603,7 @@ Reason: students may record already-overdue work and need JodNgan to surface it 
 | resource created | 201 |
 | successful no-content action | 204 |
 | request validation failed | 400 |
-| not authenticated / invalid login (after authentication slice) | 401 |
+| not authenticated / invalid login | 401 |
 | owned resource not found or inaccessible | 404 |
 | duplicate email / explicit conflict | 409 |
 | unexpected server error | 500 |
@@ -635,7 +630,7 @@ Not included:
 - [x] Optional planning fields can be added/cleared later.
 - [x] Scheduling logic remains server-side.
 - [x] Today can render from one endpoint.
-- [x] User ownership is defined for the later authentication slice; single-user trial intentionally has no ownership boundary.
+- [x] User ownership is enforced for Task/Course resources and cross-user access is hidden as not found.
 - [x] Task complete/reopen are explicit and idempotent.
 - [x] Course removal preserves Tasks.
 - [x] Error shape is consistent.

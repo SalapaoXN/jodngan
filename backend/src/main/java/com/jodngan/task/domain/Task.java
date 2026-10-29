@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record Task(
         UUID id,
+        UUID userId,
         String title,
         Instant dueAt,
         UUID courseId,
@@ -20,6 +21,7 @@ public record Task(
 
     public Task {
         Objects.requireNonNull(id, "id is required");
+        Objects.requireNonNull(userId, "userId is required");
         title = Objects.requireNonNull(title, "title is required").strip();
         if (title.isEmpty()) {
             throw new IllegalArgumentException("title must not be blank");
@@ -46,8 +48,8 @@ public record Task(
         }
     }
 
-    public static Task create(String title, Instant dueAt, UUID courseId, Instant now) {
-        return new Task(UUID.randomUUID(), title, dueAt, courseId, null, null, null, TaskStatus.ACTIVE, null, now, now);
+    public static Task create(UUID userId, String title, Instant dueAt, UUID courseId, Instant now) {
+        return new Task(UUID.randomUUID(), userId, title, dueAt, courseId, null, null, null, TaskStatus.ACTIVE, null, now, now);
     }
 
     public Task edit(
@@ -60,6 +62,7 @@ public record Task(
             Instant now) {
         return new Task(
                 id,
+                userId,
                 title,
                 dueAt,
                 courseId,
@@ -77,7 +80,7 @@ public record Task(
             return this;
         }
         return new Task(
-                id, title, dueAt, courseId, estimatedMinutes, importance, notes,
+                id, userId, title, dueAt, courseId, estimatedMinutes, importance, notes,
                 TaskStatus.COMPLETED, now, createdAt, now);
     }
 
@@ -86,7 +89,7 @@ public record Task(
             return this;
         }
         return new Task(
-                id, title, dueAt, courseId, estimatedMinutes, importance, notes,
+                id, userId, title, dueAt, courseId, estimatedMinutes, importance, notes,
                 TaskStatus.ACTIVE, null, createdAt, now);
     }
 

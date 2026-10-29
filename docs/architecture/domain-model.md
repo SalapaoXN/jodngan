@@ -1,7 +1,7 @@
 # Domain Model
 
 ## Status
-Target domain model accepted. Current implementation begins with a single-user Task-only trial and adds User ownership later.
+Target domain model accepted and implemented through Slice 6, including User ownership for Tasks and Courses.
 
 ## Goal
 Define the smallest domain model that supports fast task capture, course organization, task lifecycle, and deterministic planning without persisting values that can be recalculated.
@@ -28,19 +28,12 @@ Scheduling Engine
 
 The scheduling outputs are derived values, not entities.
 
-## Current Trial Simplification
-Before authentication exists, JodNgan is intentionally single-user:
-- Task does not require `userId` yet
-- Course is deferred until its core slice
-- initial Task capture requires only `title` and `dueAt`
-- effort, importance, and notes are added progressively
-- ownership rules below become active when the authentication slice is implemented
-
-Do not create a fake User solely to satisfy the future multi-user model.
+## Historical Trial Simplification
+Slices 1-5 intentionally validated capture/planning before accounts. Slice 6 now requires `userId` on Task/Course while preserving the same lightweight Task capture fields. The ownership migration resets unowned private-trial rows rather than creating a fake User.
 
 ---
 
-# User (Deferred Until Authentication)
+# User (Implemented in Slice 6)
 
 ## Responsibility
 - Represents the authenticated account.
@@ -227,9 +220,9 @@ The engine must not invent a precise risk estimate when effort or availability i
 
 ---
 
-# Ownership Boundary (After Authentication)
+# Ownership Boundary (Slice 6)
 
-During the single-user trial there is no account ownership boundary. After authentication is introduced, every Course and Task is user-owned.
+Every Course and Task is user-owned. Application services derive `userId` from the authenticated session and use ownership-aware repository lookups.
 
 Application services receive the authenticated `userId` and query/mutate resources within that ownership boundary.
 
@@ -260,9 +253,7 @@ Examples:
 - `updatedAt`
 
 ## Local Interpretation
-During the single-user trial, use the browser's local zone for display-only local-calendar concepts where needed. Exact remaining-time and scheduling urgency continue to use absolute instants.
-
-After authentication, use `User.timeZone` when a backend business rule depends on the user's local calendar day, such as "due today".
+The browser still renders local date/time controls, while persisted deadlines remain absolute instants. `User.timeZone` is stored at registration for backend rules that depend on the user's local calendar day.
 
 Do not store preformatted remaining-time labels.
 
@@ -291,5 +282,5 @@ Do not create persistence entities for Recommendation, Urgency, or Risk in the M
 - [x] Completed Task can be reopened.
 - [x] Course removal does not delete Tasks.
 - [x] Planning outputs can be regenerated from persisted state plus current time.
-- [x] Cross-user Course assignment will be invalid once authentication/ownership is enabled.
+- [x] Cross-user Course assignment is rejected by the ownership boundary.
 - [x] Time-dependent behavior is testable with an injected clock.

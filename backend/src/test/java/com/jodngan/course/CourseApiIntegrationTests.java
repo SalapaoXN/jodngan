@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -30,8 +31,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import com.jodngan.support.FixedUserTestConfiguration;
+
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
+@Import(FixedUserTestConfiguration.class)
 @Testcontainers(disabledWithoutDocker = true)
 class CourseApiIntegrationTests {
 
@@ -54,6 +58,16 @@ class CourseApiIntegrationTests {
     void clearData() {
         jdbcTemplate.update("DELETE FROM tasks");
         jdbcTemplate.update("DELETE FROM courses");
+        jdbcTemplate.update("DELETE FROM users");
+        Instant now = Instant.parse("2026-10-29T00:00:00Z");
+        jdbcTemplate.update(
+                "INSERT INTO users (id, email, password_hash, time_zone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                FixedUserTestConfiguration.USER_ID,
+                "test@example.com",
+                "test-hash",
+                "Asia/Bangkok",
+                java.sql.Timestamp.from(now),
+                java.sql.Timestamp.from(now));
     }
 
     @DynamicPropertySource

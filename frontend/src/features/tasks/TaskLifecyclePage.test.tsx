@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../app/App';
 import { AppProviders } from '../../app/providers/AppProviders';
+import { mockAuthenticatedApi } from '../../test/apiTestSupport';
 import type { Task, TaskListResponse } from './types';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -67,7 +68,7 @@ describe('Task lifecycle flow', () => {
       completedAt: '2030-03-02T00:00:00Z',
       planning: { remainingSeconds: -3_600, overdue: false, risk: null },
     });
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    mockAuthenticatedApi(async (input) => {
       const path = String(input);
       if (path === '/api/tasks') return jsonResponse(taskList([activeTask]));
       if (path === '/api/tasks?status=COMPLETED') return jsonResponse(taskList([completedTask]));
@@ -89,7 +90,7 @@ describe('Task lifecycle flow', () => {
 
   it('completes an active task and moves it to the completed tab', async () => {
     let current = task();
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === `/api/tasks/${current.id}/complete` && init?.method === 'POST') {
         current = {
@@ -131,7 +132,7 @@ describe('Task lifecycle flow', () => {
       completedAt: '2030-03-02T00:00:00Z',
       planning: { remainingSeconds: 7_200, overdue: false, risk: null },
     });
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const fetchMock = mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === `/api/tasks/${current.id}` && init?.method === 'PUT') {
         const body = JSON.parse(String(init.body)) as {
@@ -206,7 +207,7 @@ describe('Task lifecycle flow', () => {
 
   it('adds and clears optional planning details while showing backend risk', async () => {
     let current = task();
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const fetchMock = mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === `/api/tasks/${current.id}` && init?.method === 'PUT') {
         const body = JSON.parse(String(init.body)) as {

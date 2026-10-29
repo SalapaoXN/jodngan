@@ -1,7 +1,7 @@
 # Backend Module Boundaries
 
 ## Status
-Target modular-monolith boundaries accepted. Current single-user trial implements `course`, `task`, and `scheduling`; `identity` remains deferred until the authentication slice.
+Target modular-monolith boundaries accepted. Slice 6 implements `identity`, `course`, `task`, and `scheduling` in the authenticated modular monolith.
 
 ## Architecture
 JodNgan backend is one Spring Boot deployable application organized as a modular monolith.
@@ -15,7 +15,7 @@ task
 scheduling
 ```
 
-Current Slice 5 implements `course`, `task`, and `scheduling` plus shared technical infrastructure. `identity` remains absent until Slice 6. Do not create empty placeholder modules.
+Current Slice 6 implements all four target modules plus small shared technical infrastructure. Do not add new placeholder modules without a concrete slice requirement.
 
 Infrastructure shared across the application should stay small and technical rather than becoming a catch-all business module.
 
@@ -131,7 +131,7 @@ Domain code should not depend on infrastructure packages.
 
 ---
 
-# identity Module (Deferred Until Authentication Slice)
+# identity Module (Implemented in Slice 6)
 
 ## Owns
 - User account
@@ -181,14 +181,14 @@ Other modules should not need password hashes or authentication internals.
 ## Contract Needed by task
 Task validates optional Course assignment through a narrow application contract rather than accessing Course persistence directly.
 
-Current single-user contract:
+Current ownership-aware contract:
 
 ```text
 CourseLookup
-- findCourse(courseId)
+- findCourse(userId, courseId)
 ```
 
-Slice 6 will make this lookup ownership-aware when authenticated Users exist.
+Task supplies the authenticated User ID, so a Course owned by another User is indistinguishable from a missing Course at the application boundary.
 
 Do not expose the Course repository implementation directly.
 
@@ -207,7 +207,7 @@ Application behavior should remain consistent with that rule.
 - Task entity/lifecycle
 - Task persistence
 - task CRUD operations required by MVP
-- ownership-aware Task lookup after authentication is introduced
+- ownership-aware Task lookup for the authenticated User
 
 ## Main Use Cases
 - Quick Add Task
@@ -223,7 +223,7 @@ Course public application contract only when validating/changing a Course assign
 ## Exposes to scheduling
 Scheduling should consume immutable planning projections rather than Task persistence objects.
 
-Current Slice 5 contract:
+Current Slice 6 contract:
 
 ```text
 TaskPlanningData
@@ -275,13 +275,13 @@ It must not:
 Receive one `Clock`/`Instant now` for a calculation.
 
 ## Today Query
-During the single-user trial, an application service may:
-1. request active planning views from Task
-2. use the planning context supplied for the trial
-3. invoke SchedulingEngine
-4. compose Today response
+In Slice 6 the application service:
+1. requests ACTIVE planning views already scoped to the authenticated User
+2. captures one current Instant for the calculation
+3. invokes `SchedulingEngine`
+4. composes the Today response without moving ownership or ranking logic into React
 
-After authentication is added, the authenticated User time zone becomes the authoritative per-user zone.
+The authenticated User time zone is the authoritative per-user zone for local-calendar semantics.
 
 ---
 
@@ -311,11 +311,9 @@ This keeps external API changes from forcing persistence-model changes and preve
 
 ---
 
-# Ownership Rule (After Authentication)
+# Ownership Rule (Slice 6)
 
-The current private single-user trial has no account ownership boundary.
-
-After authentication is implemented, every Task/Course application operation receives authenticated `userId`.
+Every Task/Course application operation receives the authenticated `userId` through `CurrentUserProvider`. Ownership is part of repository lookup and mutation boundaries rather than a frontend check.
 
 Preferred repository capability:
 
@@ -394,7 +392,7 @@ They are not part of MVP implementation.
 
 # Acceptance Checklist
 
-- [x] Current single-user mode is explicit; future entity ownership rules are defined for the authentication slice.
+- [x] Identity/session context and ownership-aware Task/Course boundaries are implemented.
 - [x] Controllers contain no business formulas.
 - [x] Scheduling is independently testable.
 - [x] Scheduling does not own Task persistence.

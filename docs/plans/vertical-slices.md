@@ -5,7 +5,7 @@ Implement JodNgan as working end-to-end behavior instead of building every backe
 
 Each slice should leave the repository in a runnable, tested state.
 
-Current trial mode is intentionally single-user: no Sign In/Register screen, no session requirement, and no ownership boundary until the core planning flow is proven useful. Do not expose this trial build directly to the public internet.
+Slices 1-5 validated the core planning flow in a private single-user trial. Slice 6 introduces the authenticated multi-user boundary with Sign In/Register, server sessions, CSRF protection, and Task/Course ownership.
 
 ---
 
@@ -237,6 +237,10 @@ Course improves organization but never becomes a prerequisite for capture.
 ---
 
 # Slice 6 - Authentication + Ownership
+
+**Status: complete and verified end to end.**
+
+The V4 ownership migration intentionally resets the earlier private trial Tasks/Courses because those rows have no trustworthy User mapping. It does not create a hidden fake User.
 
 ## Goal
 Add accounts only after the core planning product is useful enough to justify multi-user persistence.

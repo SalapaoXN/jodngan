@@ -10,13 +10,13 @@ public interface TaskRepository {
 
     Task save(Task task);
 
-    List<Task> findActiveTasks();
+    List<Task> findActiveTasks(UUID userId);
 
-    List<Task> findActiveTasks(UUID courseId);
+    List<Task> findActiveTasks(UUID userId, UUID courseId);
 
-    List<Task> findCompletedTasks();
+    List<Task> findCompletedTasks(UUID userId);
 
-    List<Task> findCompletedTasks(UUID courseId);
+    List<Task> findCompletedTasks(UUID userId, UUID courseId);
 
-    Optional<Task> findById(UUID id);
+    Optional<Task> findById(UUID userId, UUID id);
 }

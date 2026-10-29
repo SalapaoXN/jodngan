@@ -32,7 +32,7 @@ Route meaning after authentication is added:
 - `/tasks` -> Tasks
 - `/tasks/:taskId` -> Task Detail
 
-Current single-user trial activates `/`, `/tasks`, and `/tasks/:taskId` directly. `/login` and `/register` are deferred and should not be implemented yet.
+Slice 6 activates all five routes. `/login` and `/register` are public; `/`, `/tasks`, and `/tasks/:taskId` are protected by `AuthGuard`.
 
 Quick Add and Course Management are interaction surfaces rather than primary routes.
 
@@ -40,17 +40,16 @@ Quick Add and Course Management are interaction surfaces rather than primary rou
 
 # Authentication Routing
 
-Authentication routing is deferred during the single-user trial.
+Slice 6 uses session-aware routing described by ADR 0002 without changing the core Today/Tasks interaction model.
 
 Current startup behavior:
-1. open Today directly at `/`
-2. load the current single-user Task/Today data
-3. do not request `/api/auth/me` or `/api/csrf`
-4. do not redirect to Sign In/Register
+1. bootstrap `GET /api/csrf` into frontend memory
+2. query `GET /api/auth/me` when a protected route renders
+3. show a short session-loading state while the current User is unknown
+4. redirect unauthenticated protected routes to `/login`, preserving the requested internal path
+5. after login, return to that internal path when safe; after registration, open Today
 
-When Slice 6 Authentication is implemented, restore the session-aware routing described by ADR 0002 without changing the core Today/Tasks interaction model.
-
-Do not store future password or session secrets in localStorage.
+Passwords, session IDs, and CSRF tokens are never stored in localStorage/sessionStorage.
 
 ---
 
@@ -100,7 +99,7 @@ Candidate files:
 auth/
 ├── api.ts
 ├── queries.ts
-├── SignInPage.tsx
+├── LoginPage.tsx
 ├── RegisterPage.tsx
 └── AuthGuard.tsx
 ```
@@ -328,9 +327,7 @@ Use one small HTTP client wrapper responsible for:
 - normalized error parsing
 - credentials/session cookie behavior
 
-CSRF client behavior is deferred with authentication. During the single-user trial there is no authenticated browser session and no CSRF-token bootstrap flow.
-
-When authentication is implemented:
+Slice 6 CSRF client behavior:
 - fetch `GET /api/csrf` on application initialization
 - keep the returned token/header name in memory only
 - automatically attach the CSRF header to unsafe methods

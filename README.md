@@ -20,7 +20,7 @@ JodNgan combines deadlines, estimated effort, priority, and available time to re
 Start as a modular monolith. Add infrastructure only when a concrete requirement justifies it.
 
 ## Project Status
-Slice 1 Core Capture, Slice 2 deterministic Today recommendation, Slice 3 Tasks + Lifecycle, Slice 4 Progressive Enrichment + Risk, and Slice 5 Courses are complete and verified end to end for the private single-user trial. Courses can be created, renamed, removed, assigned optionally in Quick Add or Task Detail, and used to filter Tasks; removing a Course leaves its Tasks intact and unassigned. Slice 6 Authentication + Ownership is the next target.
+Slice 1 Core Capture through Slice 6 Authentication + Ownership are complete and verified end to end. Email/password accounts use Spring Security server sessions, unsafe browser requests use CSRF protection, and Tasks/Courses are scoped to the authenticated User. The first ownership migration intentionally resets the earlier private trial data because it has no trustworthy owner mapping. Slice 7 Quality + End-to-End is the next target.
 
 ## Repository Guide
 - `AGENTS.md` - persistent repository rules for coding agents.

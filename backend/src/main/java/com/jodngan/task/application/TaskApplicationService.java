@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.jodngan.course.application.CourseData;
 import com.jodngan.course.application.CourseLookup;
 import com.jodngan.course.application.CourseNotFoundException;
+import com.jodngan.identity.application.CurrentUserProvider;
 import com.jodngan.task.domain.Task;
 import com.jodngan.task.domain.TaskImportance;
 import com.jodngan.task.domain.TaskStatus;
@@ -19,25 +20,34 @@ public class TaskApplicationService implements TaskPlanningReader {
 
     private final TaskRepository taskRepository;
     private final CourseLookup courseLookup;
+    private final CurrentUserProvider currentUserProvider;
     private final Clock clock;
 
-    public TaskApplicationService(TaskRepository taskRepository, CourseLookup courseLookup, Clock clock) {
+    public TaskApplicationService(
+            TaskRepository taskRepository,
+            CourseLookup courseLookup,
+            CurrentUserProvider currentUserProvider,
+            Clock clock) {
         this.taskRepository = taskRepository;
         this.courseLookup = courseLookup;
+        this.currentUserProvider = currentUserProvider;
         this.clock = clock;
     }
 
     public TaskView createTask(String title, Instant dueAt, UUID courseId) {
         Instant now = clock.instant();
-        validateCourse(courseId);
-        return view(taskRepository.save(Task.create(title, dueAt, courseId, now)), now);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        validateCourse(userId, courseId);
+        return view(taskRepository.save(Task.create(userId, title, dueAt, courseId, now)), now);
     }
 
     public List<TaskView> findTasks(TaskStatus status, UUID courseId) {
         Instant now = clock.instant();
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        validateCourse(userId, courseId);
         List<Task> tasks = status == TaskStatus.COMPLETED
-                ? (courseId == null ? taskRepository.findCompletedTasks() : taskRepository.findCompletedTasks(courseId))
-                : (courseId == null ? taskRepository.findActiveTasks() : taskRepository.findActiveTasks(courseId));
+                ? (courseId == null ? taskRepository.findCompletedTasks(userId) : taskRepository.findCompletedTasks(userId, courseId))
+                : (courseId == null ? taskRepository.findActiveTasks(userId) : taskRepository.findActiveTasks(userId, courseId));
         return tasks.stream()
                 .map(task -> view(task, now))
                 .toList();
@@ -45,7 +55,8 @@ public class TaskApplicationService implements TaskPlanningReader {
 
     public TaskView findTask(UUID id) {
         Instant now = clock.instant();
-        Task task = taskRepository.findById(id).orElseThrow(TaskNotFoundException::new);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        Task task = taskRepository.findById(userId, id).orElseThrow(TaskNotFoundException::new);
         return view(task, now);
     }
 
@@ -58,48 +69,52 @@ public class TaskApplicationService implements TaskPlanningReader {
             TaskImportance importance,
             String notes) {
         Instant now = clock.instant();
-        validateCourse(courseId);
-        Task task = requireTask(id).edit(title, dueAt, courseId, estimatedMinutes, importance, notes, now);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        validateCourse(userId, courseId);
+        Task task = requireTask(userId, id).edit(title, dueAt, courseId, estimatedMinutes, importance, notes, now);
         return view(taskRepository.save(task), now);
     }
 
     public TaskView completeTask(UUID id) {
         Instant now = clock.instant();
-        Task task = requireTask(id).complete(now);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        Task task = requireTask(userId, id).complete(now);
         return view(taskRepository.save(task), now);
     }
 
     public TaskView reopenTask(UUID id) {
         Instant now = clock.instant();
-        Task task = requireTask(id).reopen(now);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        Task task = requireTask(userId, id).reopen(now);
         return view(taskRepository.save(task), now);
     }
 
     @Override
     public List<TaskPlanningData> findActivePlanningTasks() {
-        return taskRepository.findActiveTasks().stream()
-                .map(task -> TaskPlanningData.from(task, resolveCourse(task.courseId())))
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        return taskRepository.findActiveTasks(userId).stream()
+                .map(task -> TaskPlanningData.from(task, resolveCourse(userId, task.courseId())))
                 .toList();
     }
 
-    private Task requireTask(UUID id) {
-        return taskRepository.findById(id).orElseThrow(TaskNotFoundException::new);
+    private Task requireTask(UUID userId, UUID id) {
+        return taskRepository.findById(userId, id).orElseThrow(TaskNotFoundException::new);
     }
 
     private TaskView view(Task task, Instant now) {
-        return new TaskView(task, resolveCourse(task.courseId()), task.deadlineProgressAt(now));
+        return new TaskView(task, resolveCourse(task.userId(), task.courseId()), task.deadlineProgressAt(now));
     }
 
-    private void validateCourse(UUID courseId) {
-        if (courseId != null && courseLookup.findCourse(courseId).isEmpty()) {
+    private void validateCourse(UUID userId, UUID courseId) {
+        if (courseId != null && courseLookup.findCourse(userId, courseId).isEmpty()) {
             throw new CourseNotFoundException();
         }
     }
 
-    private CourseData resolveCourse(UUID courseId) {
+    private CourseData resolveCourse(UUID userId, UUID courseId) {
         if (courseId == null) {
             return null;
         }
-        return courseLookup.findCourse(courseId).orElse(null);
+        return courseLookup.findCourse(userId, courseId).orElse(null);
     }
 }

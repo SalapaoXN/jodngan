@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.jodngan.course.application.CourseNotFoundException;
+import com.jodngan.identity.application.EmailAlreadyExistsException;
+import com.jodngan.identity.application.InvalidCredentialsException;
+import com.jodngan.identity.application.InvalidTimeZoneException;
 import com.jodngan.task.application.TaskNotFoundException;
 
 @RestControllerAdvice
@@ -52,6 +55,24 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiErrorResponse> handleCourseNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new ApiErrorResponse("RESOURCE_NOT_FOUND", "Course was not found", null));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    ResponseEntity<ApiErrorResponse> handleInvalidCredentials() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                new ApiErrorResponse("INVALID_CREDENTIALS", "Email or password is incorrect", null));
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    ResponseEntity<ApiErrorResponse> handleEmailAlreadyExists() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                new ApiErrorResponse("EMAIL_ALREADY_EXISTS", "An account with this email already exists", null));
+    }
+
+    @ExceptionHandler(InvalidTimeZoneException.class)
+    ResponseEntity<ApiErrorResponse> handleInvalidTimeZone() {
+        return ResponseEntity.badRequest().body(
+                new ApiErrorResponse("VALIDATION_ERROR", "Request validation failed", Map.of("timeZone", "Time zone is invalid")));
     }
 
     @ExceptionHandler(Exception.class)

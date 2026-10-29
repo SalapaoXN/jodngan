@@ -1,3 +1,5 @@
+import { getCsrfHeader } from './csrf';
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -10,6 +12,11 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
+  const method = (init?.method ?? 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+    const [headerName, token] = await getCsrfHeader();
+    headers.set(headerName, token);
+  }
   headers.set('Accept', 'application/json');
   if (init?.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');

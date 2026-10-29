@@ -7,46 +7,58 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.jodngan.course.domain.Course;
+import com.jodngan.identity.application.CurrentUserProvider;
 
 @Service
 public class CourseApplicationService implements CourseLookup {
 
     private final CourseRepository courseRepository;
+    private final CurrentUserProvider currentUserProvider;
     private final Clock clock;
 
-    public CourseApplicationService(CourseRepository courseRepository, Clock clock) {
+    public CourseApplicationService(
+            CourseRepository courseRepository,
+            CurrentUserProvider currentUserProvider,
+            Clock clock) {
         this.courseRepository = courseRepository;
+        this.currentUserProvider = currentUserProvider;
         this.clock = clock;
     }
 
     public CourseData createCourse(String name) {
         Instant now = clock.instant();
-        return CourseData.from(courseRepository.save(Course.create(name, now)));
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        return CourseData.from(courseRepository.save(Course.create(userId, name, now)));
     }
 
     public List<CourseData> findCourses() {
-        return courseRepository.findAll().stream().map(CourseData::from).toList();
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        return courseRepository.findAll(userId).stream().map(CourseData::from).toList();
     }
 
     public CourseData renameCourse(UUID id, String name) {
         Instant now = clock.instant();
-        Course course = requireCourse(id).rename(name, now);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        Course course = requireCourse(userId, id).rename(name, now);
         return CourseData.from(courseRepository.save(course));
     }
 
+    @Transactional
     public void removeCourse(UUID id) {
-        requireCourse(id);
-        courseRepository.deleteById(id);
+        UUID userId = currentUserProvider.requireCurrentUser().userId();
+        requireCourse(userId, id);
+        courseRepository.deleteById(userId, id);
     }
 
     @Override
-    public Optional<CourseData> findCourse(UUID id) {
-        return courseRepository.findById(id).map(CourseData::from);
+    public Optional<CourseData> findCourse(UUID userId, UUID id) {
+        return courseRepository.findById(userId, id).map(CourseData::from);
     }
 
-    private Course requireCourse(UUID id) {
-        return courseRepository.findById(id).orElseThrow(CourseNotFoundException::new);
+    private Course requireCourse(UUID userId, UUID id) {
+        return courseRepository.findById(userId, id).orElseThrow(CourseNotFoundException::new);
     }
 }

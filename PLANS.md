@@ -29,7 +29,7 @@ Bootstrap references:
 - Add local development configuration without committing secrets.
 
 ## Phase 3 - Core Product
-Status: Slice 1 Core Capture, Slice 2 Scheduling Engine + Today, Slice 3 Tasks + Lifecycle, Slice 4 Progressive Enrichment + Risk, and Slice 5 Courses are complete and verified end to end.
+Status: Slice 1 Core Capture through Slice 6 Authentication + Ownership are complete and verified end to end.
 
 Implementation task references:
 - `docs/plans/codex-core-task.md`
@@ -37,10 +37,11 @@ Implementation task references:
 - `docs/plans/codex-lifecycle-task.md`
 - `docs/plans/codex-enrichment-risk-task.md`
 - `docs/plans/codex-courses-task.md`
+- `docs/plans/codex-auth-ownership-task.md`
 
-Current target: begin Slice 6 Authentication + Ownership.
+Current target: begin Slice 7 Quality + End-to-End.
 
-Current mode: single-user trial. Authentication is deferred until the core planning flow is usable and tested.
+Current mode: authenticated multi-user MVP. Email/password sessions, CSRF protection, and Task/Course ownership are active and verified end to end.
 
 - [x] Quick task capture and deadline management.
 - [x] Remaining-time / overdue feedback.
@@ -48,7 +49,7 @@ Current mode: single-user trial. Authentication is deferred until the core plann
 - [x] Task lifecycle and redesigned task-management UI verified end to end.
 - [x] Progressive planning fields and conservative risk verified end to end.
 - [x] Optional Course organization verified end to end.
-- User account and authentication after the core value is proven.
+- [x] User account, session authentication, CSRF handling, and Task/Course ownership verified end to end.
 
 ## Phase 4 - Scheduling Engine
 - Calculate recommended work order from deadline, effort, priority, and available time.

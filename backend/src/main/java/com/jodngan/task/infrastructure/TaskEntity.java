@@ -20,6 +20,9 @@ class TaskEntity {
     @Id
     private UUID id;
 
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
     @Column(nullable = false, length = 200)
     private String title;
 
@@ -57,6 +60,7 @@ class TaskEntity {
 
     private TaskEntity(Task task) {
         id = task.id();
+        userId = task.userId();
         title = task.title();
         dueAt = task.dueAt();
         courseId = task.courseId();
@@ -76,6 +80,7 @@ class TaskEntity {
     Task toDomain() {
         return new Task(
                 id,
+                userId,
                 title,
                 dueAt,
                 courseId,

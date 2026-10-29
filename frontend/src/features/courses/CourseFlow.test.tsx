@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../app/App';
 import { AppProviders } from '../../app/providers/AppProviders';
+import { mockAuthenticatedApi } from '../../test/apiTestSupport';
 import type { Task } from '../tasks/types';
 import type { Course } from './types';
 
@@ -69,7 +70,7 @@ describe('Course organization', () => {
     let saved = false;
     let postedBody: Record<string, unknown> | null = null;
 
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === '/api/courses') return jsonResponse({ items: [course] });
       if (path === '/api/tasks' && init?.method === 'POST') {
@@ -106,7 +107,7 @@ describe('Course organization', () => {
     const isdTask = task('ISD Assignment', courses[0]);
     const dwTask = task('DW Assignment', courses[1]);
 
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === '/api/courses' && init?.method === 'POST') {
         const body = JSON.parse(String(init.body)) as { name: string };

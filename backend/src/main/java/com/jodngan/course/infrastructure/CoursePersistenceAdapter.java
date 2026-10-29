@@ -24,19 +24,19 @@ public class CoursePersistenceAdapter implements CourseRepository {
     }
 
     @Override
-    public List<Course> findAll() {
-        return repository.findAllByOrderByNameAscIdAsc().stream()
+    public List<Course> findAll(UUID userId) {
+        return repository.findAllByUserIdOrderByNameAscIdAsc(userId).stream()
                 .map(CourseEntity::toDomain)
                 .toList();
     }
 
     @Override
-    public Optional<Course> findById(UUID id) {
-        return repository.findById(id).map(CourseEntity::toDomain);
+    public Optional<Course> findById(UUID userId, UUID id) {
+        return repository.findByIdAndUserId(id, userId).map(CourseEntity::toDomain);
     }
 
     @Override
-    public void deleteById(UUID id) {
-        repository.deleteById(id);
+    public void deleteById(UUID userId, UUID id) {
+        repository.deleteByIdAndUserId(id, userId);
     }
 }

@@ -4,5 +4,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CourseLookup {
-    Optional<CourseData> findCourse(UUID id);
+    Optional<CourseData> findCourse(UUID userId, UUID id);
 }

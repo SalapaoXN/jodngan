@@ -1,15 +1,15 @@
 # ADR 0002: Use Application-Owned Email/Password with Server Sessions
 
 ## Status
-Accepted design, deferred until the single-user core planning flow is complete.
+Accepted and implemented in Slice 6.
 
 ## Context
-JodNgan will eventually need per-user Task and Course isolation, but the current trial goal is to let one person use the core planning flow with minimum friction. Authentication should not block validation of the main product value.
+JodNgan first validated the core planning flow as a private single-user trial. Slice 6 now adds per-user Task and Course isolation without changing the proven capture and planning interactions.
 
 The frontend is a browser SPA and the backend is a Spring Boot application.
 
 ## Decision
-When authentication is introduced, use application-owned email/password authentication implemented with Spring Security and server-managed sessions. Until then, the trial build remains single-user and has no Sign In/Register flow.
+Use application-owned email/password authentication implemented with Spring Security and server-managed sessions. Slice 6 activates Sign In/Register and protects the core application routes.
 
 Key choices:
 - Email is the login identifier.

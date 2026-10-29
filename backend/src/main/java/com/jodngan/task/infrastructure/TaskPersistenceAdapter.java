@@ -25,35 +25,35 @@ public class TaskPersistenceAdapter implements TaskRepository {
     }
 
     @Override
-    public List<Task> findActiveTasks() {
-        return repository.findByStatusOrderByDueAtAscIdAsc(TaskStatus.ACTIVE).stream()
+    public List<Task> findActiveTasks(UUID userId) {
+        return repository.findByUserIdAndStatusOrderByDueAtAscIdAsc(userId, TaskStatus.ACTIVE).stream()
                 .map(TaskEntity::toDomain)
                 .toList();
     }
 
     @Override
-    public List<Task> findActiveTasks(UUID courseId) {
-        return repository.findByStatusAndCourseIdOrderByDueAtAscIdAsc(TaskStatus.ACTIVE, courseId).stream()
+    public List<Task> findActiveTasks(UUID userId, UUID courseId) {
+        return repository.findByUserIdAndStatusAndCourseIdOrderByDueAtAscIdAsc(userId, TaskStatus.ACTIVE, courseId).stream()
                 .map(TaskEntity::toDomain)
                 .toList();
     }
 
     @Override
-    public List<Task> findCompletedTasks() {
-        return repository.findByStatusOrderByCompletedAtDescIdAsc(TaskStatus.COMPLETED).stream()
+    public List<Task> findCompletedTasks(UUID userId) {
+        return repository.findByUserIdAndStatusOrderByCompletedAtDescIdAsc(userId, TaskStatus.COMPLETED).stream()
                 .map(TaskEntity::toDomain)
                 .toList();
     }
 
     @Override
-    public List<Task> findCompletedTasks(UUID courseId) {
-        return repository.findByStatusAndCourseIdOrderByCompletedAtDescIdAsc(TaskStatus.COMPLETED, courseId).stream()
+    public List<Task> findCompletedTasks(UUID userId, UUID courseId) {
+        return repository.findByUserIdAndStatusAndCourseIdOrderByCompletedAtDescIdAsc(userId, TaskStatus.COMPLETED, courseId).stream()
                 .map(TaskEntity::toDomain)
                 .toList();
     }
 
     @Override
-    public Optional<Task> findById(UUID id) {
-        return repository.findById(id).map(TaskEntity::toDomain);
+    public Optional<Task> findById(UUID userId, UUID id) {
+        return repository.findByIdAndUserId(id, userId).map(TaskEntity::toDomain);
     }
 }

@@ -18,8 +18,8 @@ A student managing assignments, projects, and exams across multiple courses who 
 - Deterministic core: the MVP scheduling logic must work without AI.
 - Mobile-first UX: the primary flow should work comfortably on a phone-sized screen.
 
-## Current Trial Scope
-The immediate validation build is intentionally single-user. Authentication, account ownership, and cross-user isolation remain target requirements for the later production-oriented MVP, but they are deferred until the core capture/recommendation flow is proven useful.
+## Current MVP Scope
+The core capture/recommendation flow was validated first in a private single-user trial. Slice 6 now adds account authentication, Task/Course ownership, and cross-user isolation while keeping the post-login capture flow unchanged.
 
 ## 4. MVP Functional Requirements
 
@@ -87,8 +87,8 @@ The primary view answers, without requiring navigation through multiple screens:
 - How much time remains?
 - What is currently at risk?
 
-### FR-10 Authentication (Deferred Until Core Flow Is Complete)
-The later production-oriented MVP supports a user account and authentication so each user's courses and tasks remain isolated.
+### FR-10 Authentication and Ownership
+The MVP supports a user account and authentication so each user's Courses and Tasks remain isolated.
 
 Authentication must not make the normal post-login task-capture flow slower or more complex.
 
@@ -178,7 +178,7 @@ Acceptance Criteria:
 4. Course association can be changed later.
 5. Removing a course must not silently delete its tasks.
 
-### US-08 Use My Own Workspace Securely (Deferred)
+### US-08 Use My Own Workspace Securely
 **As a student, I want my tasks to belong to my account so that another user cannot access or modify them.**
 
 Acceptance Criteria:
@@ -227,6 +227,6 @@ Acceptance Criteria:
 These can be reconsidered only after the core quick-capture and recommendation flow is useful.
 
 ## 9. MVP Definition of Done
-For the current private trial, the core-value milestone is complete when a person can open JodNgan without signing in, quickly create assignments, see remaining time, receive an explainable recommendation, progressively add effort information, and complete tasks through a responsive flow.
+The core-value milestone remains quick capture, remaining time, explainable recommendation, progressive enrichment, Course organization, and Task lifecycle through a responsive flow.
 
-For the later production-oriented MVP, add authentication and per-user isolation before considering the public/multi-user product complete.
+For the authenticated MVP, the user can also register/sign in, retain a server session, log out, and access only their own Tasks/Courses; browser-session mutations remain CSRF-protected.

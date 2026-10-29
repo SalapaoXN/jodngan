@@ -1,7 +1,7 @@
 # Database Design
 
 ## Status
-Target multi-user design accepted. Current implementation starts in single-user trial mode and defers User ownership until the authentication slice.
+Multi-user ownership design is implemented in Slice 6. PostgreSQL now stores Users and requires `user_id` ownership on Tasks and Courses.
 
 ## Database
 PostgreSQL is the system of record.
@@ -13,16 +13,16 @@ Schema changes will be managed with Flyway migrations once implementation begins
 # Design Principles
 
 - Persist source-of-truth data, not time-sensitive derived values.
-- Add explicit ownership when authentication is introduced; do not invent a fake User solely to unblock the single-user trial.
+- Keep explicit User ownership on Task/Course data; the Slice 6 migration did not invent a fake User for earlier unowned trial rows.
 - Use database constraints for structural integrity.
 - Keep scheduling rules in the application/domain layer.
 - Store timestamps as `timestamptz` / Java `Instant`.
 
 ---
 
-# Current Single-User Trial Schema
+# Historical Single-User Trial Schema
 
-The first usable build persists Tasks without a User/account boundary. This keeps capture and recommendation work independent from authentication.
+Slices 1-5 persisted Tasks/Courses without a User boundary to validate the core planning value before authentication.
 
 Initial `tasks` fields:
 
@@ -38,13 +38,11 @@ Initial `tasks` fields:
 
 Slice 1 may create only the fields it actually uses, but migrations remain append-only once committed. `estimated_minutes`, `importance`, `notes`, and `course_id` are added by later core slices when required.
 
-No `users` table and no `user_id` column are required before the authentication slice.
-
-Trial data preservation when authentication is added will be decided at that time. For a small private trial, resetting data is acceptable unless preserving it becomes a real requirement; otherwise implement an explicit claim/backfill migration rather than a hidden fake account.
+Slice 6 supersedes this historical schema with V4 ownership. Because the private trial rows had no trustworthy owner mapping, V4 intentionally clears existing trial Tasks/Courses before adding required ownership. It does not create a hidden fake User.
 
 ---
 
-# Target Multi-User Tables (After Authentication)
+# Current Multi-User Tables (Slice 6)
 
 ## users
 
@@ -191,9 +189,7 @@ Use `Instant` for persisted timestamps.
 The user selects a local date/time. The frontend converts it to an absolute timestamp using the browser/user time zone before sending it to the API.
 
 ## User Time Zone
-During the single-user trial, the frontend uses the browser's local time zone for local-calendar display while deadlines are persisted as absolute instants.
-
-When authentication is introduced, store an IANA identifier on `users.time_zone` for authoritative per-user local-calendar labels such as "due today".
+Registration detects the browser IANA time-zone identifier and stores it on `users.time_zone`. Persisted deadlines remain absolute instants; the User time zone is account metadata for local-calendar semantics.
 
 Do not store server-local timestamps without an offset/instant interpretation.
 
@@ -201,23 +197,24 @@ Do not store server-local timestamps without an offset/instant interpretation.
 
 # Migration Plan
 
-Current single-user sequence begins with the core product rather than accounts:
+Current append-only migration sequence:
 
 ```text
 V1__create_tasks.sql
+V2__add_task_planning_fields.sql
+V3__add_courses.sql
+V4__add_users_and_ownership.sql
 ```
 
-Later core migrations add Task planning fields and Courses only when their slices require them.
-
-Authentication is implemented later with new append-only migrations that create `users` and add ownership to existing Task/Course data. Do not reserve or rewrite old migration numbers merely to match the earlier design draft.
+V4 creates `users`, adds required `user_id` ownership to Courses/Tasks, adds ownership-oriented indexes, and intentionally resets the earlier private trial rows because no trustworthy owner mapping exists.
 
 During implementation, migrations are append-only after they have been shared/merged. Do not silently rewrite applied migrations.
 
 ---
 
-# Target Multi-User Query Patterns
+# Current Multi-User Query Patterns
 
-The following ownership-scoped patterns apply after authentication is introduced. Before that, the single-user trial queries Tasks directly without `user_id` predicates.
+All Task/Course persistence access is ownership-scoped in Slice 6. Cross-user lookups return no owned resource rather than loading globally and checking later.
 
 ## Today
 

@@ -9,11 +9,13 @@ import com.jodngan.task.domain.TaskStatus;
 
 public interface SpringDataTaskRepository extends JpaRepository<TaskEntity, UUID> {
 
-    List<TaskEntity> findByStatusOrderByDueAtAscIdAsc(TaskStatus status);
+    List<TaskEntity> findByUserIdAndStatusOrderByDueAtAscIdAsc(UUID userId, TaskStatus status);
 
-    List<TaskEntity> findByStatusAndCourseIdOrderByDueAtAscIdAsc(TaskStatus status, UUID courseId);
+    List<TaskEntity> findByUserIdAndStatusAndCourseIdOrderByDueAtAscIdAsc(UUID userId, TaskStatus status, UUID courseId);
 
-    List<TaskEntity> findByStatusOrderByCompletedAtDescIdAsc(TaskStatus status);
+    List<TaskEntity> findByUserIdAndStatusOrderByCompletedAtDescIdAsc(UUID userId, TaskStatus status);
 
-    List<TaskEntity> findByStatusAndCourseIdOrderByCompletedAtDescIdAsc(TaskStatus status, UUID courseId);
+    List<TaskEntity> findByUserIdAndStatusAndCourseIdOrderByCompletedAtDescIdAsc(UUID userId, TaskStatus status, UUID courseId);
+
+    java.util.Optional<TaskEntity> findByIdAndUserId(UUID id, UUID userId);
 }

@@ -10,7 +10,7 @@ Protect the business rules that make JodNgan useful while keeping tests focused 
 
 # Backend Test Pyramid
 
-Current trial note: authentication/ownership security tests are deferred until Slice 6. Before then, prioritize Task persistence, time calculations, lifecycle, scheduling, and UI behavior for the single-user trial.
+Slice 6 adds dedicated authentication/ownership integration coverage on top of the existing Task persistence, lifecycle, scheduling, Course, and frontend behavior suites.
 
 ## 1. Domain Unit Tests
 Highest priority.
@@ -98,7 +98,7 @@ Cover current core behavior first:
 - Course CRUD
 - unexpected internal details are not leaked in errors
 
-Add register/login/logout/current-user, unauthenticated access, CSRF, and cross-user not-found behavior when Slice 6 Authentication + Ownership is implemented.
+Slice 6 additionally covers register/login/logout/current-user, unauthenticated access, CSRF, session persistence, and cross-user not-found behavior.
 
 Focus on contract behavior from `api-contract.md`.
 
@@ -194,9 +194,9 @@ Keep architecture tests narrow and readable.
 
 # Security Tests
 
-These become required when Slice 6 Authentication + Ownership is implemented. The private single-user trial intentionally does not implement an account boundary yet.
+These checks are required in Slice 6 and are covered by the dedicated authentication/ownership integration suite:
 
-Required server-side checks at that stage:
+Required server-side checks:
 - password is encoded, never stored as plaintext
 - invalid login does not reveal account existence
 - unauthenticated API requests are rejected

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../../app/App';
 import { AppProviders } from '../../app/providers/AppProviders';
+import { mockAuthenticatedApi } from '../../test/apiTestSupport';
 import type { TodayRecommendation, TodayResponse } from '../today/types';
 import type { Task, TaskListResponse } from './types';
 
@@ -93,7 +94,7 @@ function todayResponse(
 }
 
 function mockReadApis(items: Task[] = [], today = todayResponse()) {
-  return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+  return mockAuthenticatedApi(async (input, init) => {
     const path = String(input);
     if (path === '/api/tasks' && init?.method !== 'POST') {
       return jsonResponse(taskList(items));
@@ -119,17 +120,17 @@ describe('single-user Today flow', () => {
 
     renderApp();
 
-    expect(screen.getByRole('heading', { name: 'Today' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
     expect(await screen.findByText(/เพิ่มงานเพื่อให้ JodNgan/)).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'No tasks yet' })).toBeInTheDocument();
   });
 
-  it('shows independent loading states for recommendation and task list', () => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise<Response>(() => undefined));
+  it('shows independent loading states for recommendation and task list', async () => {
+    mockAuthenticatedApi(() => new Promise<Response>(() => undefined));
 
     renderApp();
 
-    expect(screen.getByText('กำลังจัดลำดับงาน…')).toBeInTheDocument();
+    expect(await screen.findByText('กำลังจัดลำดับงาน…')).toBeInTheDocument();
     expect(screen.getByText('Loading tasks…')).toBeInTheDocument();
   });
 
@@ -159,7 +160,7 @@ describe('single-user Today flow', () => {
       },
     });
     let saved = false;
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const fetchMock = mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === '/api/tasks' && init?.method === 'POST') {
         saved = true;
@@ -252,13 +253,13 @@ describe('single-user Today flow', () => {
     );
     renderApp();
 
-    const recommendationSection = screen.getByRole('region', { name: 'Today recommendation' });
+    const recommendationSection = await screen.findByRole('region', { name: 'Today recommendation' });
     expect(await within(recommendationSection).findByRole('heading', { name: 'Backend choice' })).toBeInTheDocument();
   });
 
   it('shows a task-list error and recovers without blocking recommendation', async () => {
     let taskAttempts = 0;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    mockAuthenticatedApi(async (input) => {
       const path = String(input);
       if (path === '/api/today') {
         return jsonResponse(todayResponse());
@@ -281,7 +282,7 @@ describe('single-user Today flow', () => {
   it('shows a recommendation error and recovers without blocking Quick Add', async () => {
     const selectedTask = task();
     let todayAttempts = 0;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    mockAuthenticatedApi(async (input) => {
       const path = String(input);
       if (path === '/api/tasks') {
         return jsonResponse(taskList([selectedTask]));
@@ -306,7 +307,7 @@ describe('single-user Today flow', () => {
     const savedTask = task({ title: 'Retry task' });
     let postAttempts = 0;
     let saved = false;
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    mockAuthenticatedApi(async (input, init) => {
       const path = String(input);
       if (path === '/api/tasks' && init?.method === 'POST') {
         postAttempts += 1;

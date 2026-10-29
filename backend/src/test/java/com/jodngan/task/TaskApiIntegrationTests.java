@@ -40,9 +40,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import com.jodngan.support.FixedUserTestConfiguration;
+
 @SpringBootTest
-@AutoConfigureMockMvc
-@Import(TaskApiIntegrationTests.FixedClockConfiguration.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import({TaskApiIntegrationTests.FixedClockConfiguration.class, FixedUserTestConfiguration.class})
 @Testcontainers(disabledWithoutDocker = true)
 class TaskApiIntegrationTests {
 
@@ -67,8 +69,18 @@ class TaskApiIntegrationTests {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void clearTasks() {
+    void clearData() {
         jdbcTemplate.update("DELETE FROM tasks");
+        jdbcTemplate.update("DELETE FROM courses");
+        jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update(
+                "INSERT INTO users (id, email, password_hash, time_zone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+                FixedUserTestConfiguration.USER_ID,
+                "test@example.com",
+                "test-hash",
+                "Asia/Bangkok",
+                java.sql.Timestamp.from(FIXED_NOW),
+                java.sql.Timestamp.from(FIXED_NOW));
     }
 
     @DynamicPropertySource
@@ -79,7 +91,7 @@ class TaskApiIntegrationTests {
     }
 
     @Test
-    void flywayCreatesTaskSchemaThroughPlanningEnrichmentMigration() {
+    void flywayCreatesSchemaThroughOwnershipMigration() {
         assertTrue(Arrays.stream(flyway.info().applied())
                 .anyMatch(migration -> migration.getVersion() != null
                         && "1".equals(migration.getVersion().getVersion())));
@@ -89,7 +101,10 @@ class TaskApiIntegrationTests {
         assertTrue(Arrays.stream(flyway.info().applied())
                 .anyMatch(migration -> migration.getVersion() != null
                         && "3".equals(migration.getVersion().getVersion())));
-        assertEquals(0L, jdbcTemplate.queryForObject(
+        assertTrue(Arrays.stream(flyway.info().applied())
+                .anyMatch(migration -> migration.getVersion() != null
+                        && "4".equals(migration.getVersion().getVersion())));
+        assertEquals(1L, jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM information_schema.tables "
                         + "WHERE table_schema = 'public' AND table_name = 'users'",
                 Long.class));
@@ -107,9 +122,14 @@ class TaskApiIntegrationTests {
                         + "WHERE table_schema = 'public' AND table_name = 'tasks' "
                         + "AND column_name = 'course_id'",
                 Long.class));
-        assertEquals(0L, jdbcTemplate.queryForObject(
+        assertEquals(1L, jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM information_schema.columns "
                         + "WHERE table_schema = 'public' AND table_name = 'tasks' "
+                        + "AND column_name = 'user_id'",
+                Long.class));
+        assertEquals(1L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.columns "
+                        + "WHERE table_schema = 'public' AND table_name = 'courses' "
                         + "AND column_name = 'user_id'",
                 Long.class));
     }

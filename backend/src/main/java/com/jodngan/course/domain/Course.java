@@ -6,12 +6,14 @@ import java.util.UUID;
 
 public record Course(
         UUID id,
+        UUID userId,
         String name,
         Instant createdAt,
         Instant updatedAt) {
 
     public Course {
         Objects.requireNonNull(id, "id is required");
+        Objects.requireNonNull(userId, "userId is required");
         name = Objects.requireNonNull(name, "name is required").strip();
         if (name.isEmpty()) {
             throw new IllegalArgumentException("name must not be blank");
@@ -23,11 +25,11 @@ public record Course(
         Objects.requireNonNull(updatedAt, "updatedAt is required");
     }
 
-    public static Course create(String name, Instant now) {
-        return new Course(UUID.randomUUID(), name, now, now);
+    public static Course create(UUID userId, String name, Instant now) {
+        return new Course(UUID.randomUUID(), userId, name, now, now);
     }
 
     public Course rename(String name, Instant now) {
-        return new Course(id, name, createdAt, now);
+        return new Course(id, userId, name, createdAt, now);
     }
 }
