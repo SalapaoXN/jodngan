@@ -26,6 +26,7 @@ function task(overrides: Partial<Task> = {}): Task {
     id: 'a6c0ce45-9efb-4c26-bcf4-4da02cbcc4fb',
     title: 'Database Assignment',
     dueAt: '2030-03-15T13:45:00Z',
+    course: null,
     estimatedMinutes: null,
     importance: null,
     notes: null,
@@ -70,6 +71,7 @@ describe('Task lifecycle flow', () => {
       const path = String(input);
       if (path === '/api/tasks') return jsonResponse(taskList([activeTask]));
       if (path === '/api/tasks?status=COMPLETED') return jsonResponse(taskList([completedTask]));
+      if (path === '/api/courses') return jsonResponse({ items: [] });
       throw new Error(`Unexpected request: ${path}`);
     });
 
@@ -108,6 +110,7 @@ describe('Task lifecycle flow', () => {
         return jsonResponse({ generatedAt: '2030-03-01T00:00:00Z', primaryRecommendation: null, upcomingTasks: [] });
       }
       if (path === `/api/tasks/${current.id}`) return jsonResponse(current);
+      if (path === '/api/courses') return jsonResponse({ items: [] });
       throw new Error(`Unexpected request: ${path}`);
     });
 
@@ -121,7 +124,8 @@ describe('Task lifecycle flow', () => {
     expect(screen.getByRole('button', { name: 'Reopen' })).toBeInTheDocument();
   });
 
-  it('edits task detail and can reopen a completed task', async () => {
+  it('edits task detail, changes course, and can reopen a completed task', async () => {
+    const course = { id: '11111111-1111-1111-1111-111111111111', name: 'ISD' };
     let current = task({
       status: 'COMPLETED',
       completedAt: '2030-03-02T00:00:00Z',
@@ -133,6 +137,7 @@ describe('Task lifecycle flow', () => {
         const body = JSON.parse(String(init.body)) as {
           title: string;
           dueAt: string;
+          courseId: string | null;
           estimatedMinutes: number | null;
           importance: Task['importance'];
           notes: string | null;
@@ -141,6 +146,7 @@ describe('Task lifecycle flow', () => {
           ...current,
           title: body.title,
           dueAt: body.dueAt,
+          course: body.courseId === course.id ? course : null,
           estimatedMinutes: body.estimatedMinutes,
           importance: body.importance,
           notes: body.notes,
@@ -171,20 +177,26 @@ describe('Task lifecycle flow', () => {
       if (path === '/api/today') {
         return jsonResponse({ generatedAt: '2030-03-01T00:00:00Z', primaryRecommendation: null, upcomingTasks: [] });
       }
+      if (path === '/api/courses') return jsonResponse({ items: [course] });
       throw new Error(`Unexpected request: ${path}`);
     });
 
     renderApp(`/tasks/${current.id}`);
 
     const titleInput = await screen.findByLabelText('Task name');
+    await screen.findByRole('option', { name: 'ISD' });
     fireEvent.change(titleInput, { target: { value: 'Updated Database Assignment' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /Course/ }), { target: { value: course.id } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     expect(await screen.findByRole('heading', { name: 'Updated Database Assignment' })).toBeInTheDocument();
     await waitFor(() => {
       const putCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
       expect(putCall).toBeDefined();
-      expect(JSON.parse(String(putCall?.[1]?.body))).toMatchObject({ title: 'Updated Database Assignment' });
+      expect(JSON.parse(String(putCall?.[1]?.body))).toMatchObject({
+        title: 'Updated Database Assignment',
+        courseId: course.id,
+      });
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Reopen task' }));
@@ -230,6 +242,7 @@ describe('Task lifecycle flow', () => {
       if (path === '/api/today') {
         return jsonResponse({ generatedAt: '2030-03-01T00:00:00Z', primaryRecommendation: null, upcomingTasks: [] });
       }
+      if (path === '/api/courses') return jsonResponse({ items: [] });
       throw new Error(`Unexpected request: ${path}`);
     });
 
@@ -245,6 +258,7 @@ describe('Task lifecycle flow', () => {
     await waitFor(() => {
       const putCall = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
       expect(JSON.parse(String(putCall?.[1]?.body))).toMatchObject({
+        courseId: null,
         estimatedMinutes: 180,
         importance: 'HIGH',
         notes: 'Split the report into sections',
@@ -261,6 +275,7 @@ describe('Task lifecycle flow', () => {
       const putCalls = fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT');
       const lastPutCall = putCalls[putCalls.length - 1];
       expect(JSON.parse(String(lastPutCall?.[1]?.body))).toMatchObject({
+        courseId: null,
         estimatedMinutes: null,
         importance: null,
         notes: null,

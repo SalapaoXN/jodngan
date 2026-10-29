@@ -1,6 +1,7 @@
 package com.jodngan.task.api;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,5 +12,6 @@ public record CreateTaskRequest(
         @Size(max = 200, message = "Task name must be 200 characters or fewer")
         String title,
         @NotNull(message = "Due date and time is required")
-        Instant dueAt) {
+        Instant dueAt,
+        UUID courseId) {
 }

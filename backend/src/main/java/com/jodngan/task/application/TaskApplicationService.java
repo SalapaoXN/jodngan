@@ -7,6 +7,9 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.jodngan.course.application.CourseData;
+import com.jodngan.course.application.CourseLookup;
+import com.jodngan.course.application.CourseNotFoundException;
 import com.jodngan.task.domain.Task;
 import com.jodngan.task.domain.TaskImportance;
 import com.jodngan.task.domain.TaskStatus;
@@ -15,23 +18,26 @@ import com.jodngan.task.domain.TaskStatus;
 public class TaskApplicationService implements TaskPlanningReader {
 
     private final TaskRepository taskRepository;
+    private final CourseLookup courseLookup;
     private final Clock clock;
 
-    public TaskApplicationService(TaskRepository taskRepository, Clock clock) {
+    public TaskApplicationService(TaskRepository taskRepository, CourseLookup courseLookup, Clock clock) {
         this.taskRepository = taskRepository;
+        this.courseLookup = courseLookup;
         this.clock = clock;
     }
 
-    public TaskView createTask(String title, Instant dueAt) {
+    public TaskView createTask(String title, Instant dueAt, UUID courseId) {
         Instant now = clock.instant();
-        return view(taskRepository.save(Task.create(title, dueAt, now)), now);
+        validateCourse(courseId);
+        return view(taskRepository.save(Task.create(title, dueAt, courseId, now)), now);
     }
 
-    public List<TaskView> findTasks(TaskStatus status) {
+    public List<TaskView> findTasks(TaskStatus status, UUID courseId) {
         Instant now = clock.instant();
         List<Task> tasks = status == TaskStatus.COMPLETED
-                ? taskRepository.findCompletedTasks()
-                : taskRepository.findActiveTasks();
+                ? (courseId == null ? taskRepository.findCompletedTasks() : taskRepository.findCompletedTasks(courseId))
+                : (courseId == null ? taskRepository.findActiveTasks() : taskRepository.findActiveTasks(courseId));
         return tasks.stream()
                 .map(task -> view(task, now))
                 .toList();
@@ -47,11 +53,13 @@ public class TaskApplicationService implements TaskPlanningReader {
             UUID id,
             String title,
             Instant dueAt,
+            UUID courseId,
             Integer estimatedMinutes,
             TaskImportance importance,
             String notes) {
         Instant now = clock.instant();
-        Task task = requireTask(id).edit(title, dueAt, estimatedMinutes, importance, notes, now);
+        validateCourse(courseId);
+        Task task = requireTask(id).edit(title, dueAt, courseId, estimatedMinutes, importance, notes, now);
         return view(taskRepository.save(task), now);
     }
 
@@ -70,7 +78,7 @@ public class TaskApplicationService implements TaskPlanningReader {
     @Override
     public List<TaskPlanningData> findActivePlanningTasks() {
         return taskRepository.findActiveTasks().stream()
-                .map(TaskPlanningData::from)
+                .map(task -> TaskPlanningData.from(task, resolveCourse(task.courseId())))
                 .toList();
     }
 
@@ -79,6 +87,19 @@ public class TaskApplicationService implements TaskPlanningReader {
     }
 
     private TaskView view(Task task, Instant now) {
-        return new TaskView(task, task.deadlineProgressAt(now));
+        return new TaskView(task, resolveCourse(task.courseId()), task.deadlineProgressAt(now));
+    }
+
+    private void validateCourse(UUID courseId) {
+        if (courseId != null && courseLookup.findCourse(courseId).isEmpty()) {
+            throw new CourseNotFoundException();
+        }
+    }
+
+    private CourseData resolveCourse(UUID courseId) {
+        if (courseId == null) {
+            return null;
+        }
+        return courseLookup.findCourse(courseId).orElse(null);
     }
 }

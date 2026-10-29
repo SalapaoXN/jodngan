@@ -163,7 +163,7 @@ The user can maintain the full required Task lifecycle without hard deletion.
 
 # Slice 4 - Progressive Enrichment + Risk
 
-**Status: implemented; manual enrichment/risk smoke passed. Automated verification is pending.**
+**Status: complete and verified end to end.**
 
 ## Goal
 Make recommendations smarter without increasing initial capture friction.
@@ -202,6 +202,8 @@ The user can improve recommendation quality after capture while initial entry st
 ---
 
 # Slice 5 - Courses
+
+**Status: complete and verified end to end.**
 
 ## Goal
 Add optional organization only after the planning loop already works.

@@ -26,6 +26,9 @@ class TaskEntity {
     @Column(name = "due_at", nullable = false)
     private Instant dueAt;
 
+    @Column(name = "course_id")
+    private UUID courseId;
+
     @Column(name = "estimated_minutes")
     private Integer estimatedMinutes;
 
@@ -56,6 +59,7 @@ class TaskEntity {
         id = task.id();
         title = task.title();
         dueAt = task.dueAt();
+        courseId = task.courseId();
         estimatedMinutes = task.estimatedMinutes();
         importance = task.importance();
         notes = task.notes();
@@ -74,6 +78,7 @@ class TaskEntity {
                 id,
                 title,
                 dueAt,
+                courseId,
                 estimatedMinutes,
                 importance,
                 notes,

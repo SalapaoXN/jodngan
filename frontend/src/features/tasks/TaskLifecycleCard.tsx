@@ -29,6 +29,7 @@ export function TaskLifecycleCard({ task, actionLabel, actionPending, onAction }
               <h3><Link to={`/tasks/${task.id}`}>{task.title}</Link></h3>
             </div>
             <p className="task-due-line">Due <time dateTime={task.dueAt}>{dueDate}</time></p>
+            {task.course && <span className="course-chip">{task.course.name}</span>}
           </div>
           <button type="button" className="secondary-button lifecycle-action" disabled={actionPending} onClick={onAction}>
             {actionPending ? 'Saving…' : actionLabel}

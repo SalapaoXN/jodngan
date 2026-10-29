@@ -28,6 +28,9 @@ export function RecommendationCard({ recommendation }: { recommendation: TodayRe
           <span className="guidance-pill">{startGuidanceLabels[recommendation.startGuidance]}</span>
         </div>
 
+        {recommendation.task.course && (
+          <span className="course-chip recommendation-course">{recommendation.task.course.name}</span>
+        )}
         <p className="recommendation-reason">{recommendation.reason}</p>
 
         {recommendation.task.planning.risk?.state === 'AT_RISK' && (

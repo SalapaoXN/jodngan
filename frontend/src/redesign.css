@@ -432,6 +432,13 @@ body {
   font-weight: 750;
 }
 
+.field-optional {
+  margin-left: 5px;
+  color: var(--jn-muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
 .field-group input,
 .field-group select,
 .field-group textarea {
@@ -672,6 +679,170 @@ body {
   border-color: #9fb2a7;
   color: var(--jn-green-900);
   background: var(--jn-green-050);
+}
+
+.course-manager {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.course-manager-panel {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--jn-border);
+  border-radius: var(--jn-radius-md);
+  background: var(--jn-surface);
+  box-shadow: var(--jn-shadow-sm);
+}
+
+.course-manager-heading h3 {
+  margin: 4px 0 5px;
+  color: var(--jn-ink);
+  font-size: 1.05rem;
+}
+
+.course-manager-heading p:last-child,
+.course-empty {
+  margin: 0;
+  color: var(--jn-muted);
+  font-size: 0.8rem;
+}
+
+.course-create-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.course-create-form > label {
+  color: var(--jn-ink-soft);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.course-create-row,
+.course-edit-row {
+  display: flex;
+  gap: 8px;
+}
+
+.course-create-row input,
+.course-edit-row input,
+.course-filter select {
+  min-height: 42px;
+  border: 1px solid var(--jn-border-strong);
+  border-radius: 11px;
+  color: var(--jn-ink);
+  background: #fff;
+}
+
+.course-create-row input,
+.course-edit-row input {
+  min-width: 0;
+  flex: 1;
+  padding: 9px 11px;
+}
+
+.course-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.course-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid #e2e8e3;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.course-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--jn-ink);
+  font-size: 0.88rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.danger-button {
+  min-height: 36px;
+  border: 1px solid #e5b8b2;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--jn-danger);
+  font-weight: 750;
+}
+
+.danger-text {
+  color: var(--jn-danger) !important;
+}
+
+.task-list-controls {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.task-list-controls .task-tabs {
+  margin-bottom: 0;
+}
+
+.course-filter {
+  display: grid;
+  gap: 5px;
+}
+
+.course-filter label {
+  color: var(--jn-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.course-filter select {
+  min-width: 190px;
+  padding: 7px 32px 7px 10px;
+}
+
+.course-chip {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin: 2px 0 5px;
+  padding: 4px 8px;
+  overflow: hidden;
+  border: 1px solid #d6e2da;
+  border-radius: 999px;
+  color: var(--jn-green-700);
+  background: var(--jn-green-050);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommendation-course {
+  margin-top: 9px;
+  margin-bottom: 0;
 }
 
 .task-section {
@@ -1130,6 +1301,36 @@ body {
 
   .planning-fields-grid {
     grid-template-columns: 1fr;
+  }
+
+  .task-list-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .course-filter select {
+    width: 100%;
+  }
+
+  .task-list-controls .task-tabs {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .course-manager-toggle {
+    width: 100%;
+  }
+
+  .course-create-row,
+  .course-edit-row,
+  .course-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .course-row-actions {
+    flex-wrap: wrap;
   }
 
   .planning-detail-heading {

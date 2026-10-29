@@ -1,7 +1,7 @@
 # Backend Module Boundaries
 
 ## Status
-Target modular-monolith boundaries accepted. Current single-user trial implements `task` first; `identity`, `course`, and `scheduling` are added only when their slices begin.
+Target modular-monolith boundaries accepted. Current single-user trial implements `course`, `task`, and `scheduling`; `identity` remains deferred until the authentication slice.
 
 ## Architecture
 JodNgan backend is one Spring Boot deployable application organized as a modular monolith.
@@ -15,7 +15,7 @@ task
 scheduling
 ```
 
-Current Slice 1 implements only `task` plus existing shared technical infrastructure. Do not create empty placeholder modules.
+Current Slice 5 implements `course`, `task`, and `scheduling` plus shared technical infrastructure. `identity` remains absent until Slice 6. Do not create empty placeholder modules.
 
 Infrastructure shared across the application should stay small and technical rather than becoming a catch-all business module.
 
@@ -165,7 +165,7 @@ Other modules should not need password hashes or authentication internals.
 
 ---
 
-# course Module (Deferred Until Course Slice)
+# course Module (Implemented in Slice 5)
 
 ## Owns
 - Course entity
@@ -179,15 +179,16 @@ Other modules should not need password hashes or authentication internals.
 - Remove Course
 
 ## Contract Needed by task
-Task needs to validate that an optional Course belongs to the authenticated User.
+Task validates optional Course assignment through a narrow application contract rather than accessing Course persistence directly.
 
-Expose a narrow lookup capability, for example conceptually:
+Current single-user contract:
 
 ```text
 CourseLookup
-- findOwnedCourse(userId, courseId)
-- existsOwnedCourse(userId, courseId)
+- findCourse(courseId)
 ```
+
+Slice 6 will make this lookup ownership-aware when authenticated Users exist.
 
 Do not expose the Course repository implementation directly.
 
@@ -222,20 +223,21 @@ Course public application contract only when validating/changing a Course assign
 ## Exposes to scheduling
 Scheduling should consume immutable planning projections rather than Task persistence objects.
 
-Current Slice 4 contract:
+Current Slice 5 contract:
 
 ```text
 TaskPlanningData
 - id
 - title
 - dueAt
+- course?          // display context only
 - estimatedMinutes?
 - importance?
 - createdAt
 - updatedAt
 ```
 
-The Task application boundary exposes only ACTIVE planning data. Notes stay inside Task because scheduling does not need them. Course is added only when the Course slice begins.
+The Task application boundary exposes only ACTIVE planning data. Notes stay inside Task because scheduling does not need them. Course summary may travel with the projection so Today can display it, but `SchedulingEngine` does not consume Course for scoring, risk, urgency, or tie-breaking.
 
 Task remains the source of truth; scheduling does not own or mutate it.
 

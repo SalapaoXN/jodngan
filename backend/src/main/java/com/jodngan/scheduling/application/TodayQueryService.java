@@ -3,6 +3,9 @@ package com.jodngan.scheduling.application;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -34,16 +37,21 @@ public class TodayQueryService {
 
     public TodayView getToday() {
         Instant now = clock.instant();
-        List<SchedulableTask> inputs = taskPlanningReader.findActivePlanningTasks().stream()
+        List<TaskPlanningData> planningTasks = taskPlanningReader.findActivePlanningTasks();
+        Map<UUID, TaskPlanningData> tasksById = planningTasks.stream()
+                .collect(Collectors.toMap(TaskPlanningData::id, task -> task));
+        List<SchedulableTask> inputs = planningTasks.stream()
                 .map(TodayQueryService::toSchedulableTask)
                 .toList();
 
         List<RankedTask> ranked = schedulingEngine.rank(inputs, now).rankedTasks();
-        TodayView.Recommendation primary = ranked.isEmpty() ? null : toRecommendation(ranked.get(0));
+        TodayView.Recommendation primary = ranked.isEmpty()
+                ? null
+                : toRecommendation(ranked.get(0), tasksById.get(ranked.get(0).task().id()));
         List<TodayView.Recommendation> upcoming = ranked.stream()
                 .skip(1)
                 .limit(UPCOMING_LIMIT)
-                .map(TodayQueryService::toRecommendation)
+                .map(item -> toRecommendation(item, tasksById.get(item.task().id())))
                 .toList();
 
         return new TodayView(now, primary, upcoming);
@@ -60,16 +68,7 @@ public class TodayQueryService {
                 task.updatedAt());
     }
 
-    private static TodayView.Recommendation toRecommendation(RankedTask ranked) {
-        SchedulableTask task = ranked.task();
-        TaskPlanningData taskData = new TaskPlanningData(
-                task.id(),
-                task.title(),
-                task.dueAt(),
-                task.estimatedMinutes(),
-                toTaskImportance(task.importance()),
-                task.createdAt(),
-                task.updatedAt());
+    private static TodayView.Recommendation toRecommendation(RankedTask ranked, TaskPlanningData taskData) {
         return new TodayView.Recommendation(
                 taskData,
                 ranked.urgency(),
@@ -91,14 +90,4 @@ public class TodayQueryService {
         };
     }
 
-    private static TaskImportance toTaskImportance(PlanningImportance importance) {
-        if (importance == null) {
-            return null;
-        }
-        return switch (importance) {
-            case LOW -> TaskImportance.LOW;
-            case NORMAL -> TaskImportance.NORMAL;
-            case HIGH -> TaskImportance.HIGH;
-        };
-    }
 }

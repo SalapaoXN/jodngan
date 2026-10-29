@@ -22,6 +22,7 @@ export function TaskListItem({ task }: { task: Task }) {
             <p className="task-due-line">
               Due <time dateTime={task.dueAt}>{localDueDate}</time>
             </p>
+            {task.course && <span className="course-chip">{task.course.name}</span>}
             <div className="task-status-meta">
               <p className={task.planning.overdue ? 'deadline overdue' : 'deadline'}>
                 {formatRemainingTime(task.planning.remainingSeconds, task.planning.overdue)}

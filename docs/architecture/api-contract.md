@@ -1,7 +1,7 @@
 # REST API Contract
 
 ## Status
-Target MVP contract accepted. Current implementation is the single-user core trial; authentication/ownership and later Task/Course capabilities remain documented below but are deferred until their slices.
+Target MVP contract accepted. Current implementation is the single-user trial through Slice 5, including Course organization. Authentication and ownership remain deferred until Slice 6.
 
 ## Base Path
 
@@ -197,7 +197,7 @@ Return the current authenticated user.
 
 # Task Representation
 
-## Current Slice 1-4 Task
+## Current Slice 1-5 Task
 The single-user trial returns capture, lifecycle, optional planning enrichment, and conservative risk data:
 
 ```json
@@ -205,6 +205,10 @@ The single-user trial returns capture, lifecycle, optional planning enrichment, 
   "id": "7c40f037-9d59-4b54-839f-b324e92f3b8e",
   "title": "Database Assignment",
   "dueAt": "2026-10-31T16:59:00Z",
+  "course": {
+    "id": "933fe6fd-55bc-447a-a40c-eaff32e24f67",
+    "name": "Data Warehouse"
+  },
   "estimatedMinutes": 180,
   "importance": "HIGH",
   "notes": "Split the report into sections",
@@ -226,7 +230,7 @@ The single-user trial returns capture, lifecycle, optional planning enrichment, 
 
 `remainingSeconds`, `overdue`, and `risk` are derived and are not persisted. `estimatedMinutes`, `importance`, and `notes` are nullable and may be cleared by sending `null` (or omitting them from the current full-replacement update payload). Completed Tasks return no active risk assessment.
 
-Course fields remain deferred to Slice 5.
+`course` is nullable. Task create/update accepts nullable `courseId`; a supplied ID must reference an existing Course. Course ownership is added later with authentication.
 
 ## Task Summary
 Used by Today and Tasks lists.
@@ -261,8 +265,8 @@ Used by Today and Tasks lists.
 
 `course`, `estimatedMinutes`, and `importance` may be null.
 
-## Target Enriched Task Detail (Slice 4/5)
-Later slices add progressive planning and Course fields:
+## Nullable Task Detail Example
+The same current representation supports unassigned Tasks and missing optional planning fields:
 
 ```json
 {
@@ -300,24 +304,24 @@ Later slices add progressive planning and Course fields:
 ## POST /api/tasks
 Quick Add endpoint.
 
-### Request - Current Slice 1
+### Request - Current Slice 5
 
 ```json
 {
   "title": "Database Assignment",
-  "dueAt": "2026-10-31T16:59:00Z"
+  "dueAt": "2026-10-31T16:59:00Z",
+  "courseId": "933fe6fd-55bc-447a-a40c-eaff32e24f67"
 }
 ```
 
-Current Quick Add does not require Course, estimated effort, importance, notes, or authentication.
-
-`courseId` is added later when the Course slice is implemented.
+`courseId` is optional and may be `null` or omitted. Quick Add still does not require estimated effort, importance, notes, or authentication.
 
 ### Response - 201
 Returns the current Task representation with derived remaining-time data immediately.
 
-### Errors - Current Slice 1
+### Errors - Current Slice 5
 - `400 VALIDATION_ERROR`
+- `404 RESOURCE_NOT_FOUND` when a supplied `courseId` does not exist
 
 ---
 
@@ -325,13 +329,12 @@ Returns the current Task representation with derived remaining-time data immedia
 List Tasks in the current single-user dataset. After authentication is introduced, this becomes ownership-scoped to the authenticated User.
 
 ### Query Parameters
-Slice 3 supports lifecycle filtering:
+Slice 5 supports lifecycle and optional Course filtering:
 
 ```text
 status=ACTIVE|COMPLETED   optional, defaults to ACTIVE
+courseId=UUID             optional
 ```
-
-Course filtering is added later in Slice 5.
 
 ### Response - 200
 
@@ -355,7 +358,7 @@ Course filtering is added later in Slice 5.
 }
 ```
 
-This is the current Slice 4 Task list shape for the single-user trial. Effort, importance, notes, and conservative risk are available now; Course and due-today enrichment remain deferred.
+The current Slice 5 Task list uses the same Task representation, including nullable Course summary, effort, importance, notes, and conservative risk. Due-today display enrichment remains separate from this endpoint.
 
 Ordering:
 - ACTIVE Tasks by due date ascending, then stable ID ordering
@@ -366,7 +369,7 @@ This endpoint is a Task list, not the scheduling ranking endpoint.
 ---
 
 ## GET /api/tasks/{taskId}
-Return one Task Detail. In Slice 4 this uses the current enriched Task representation above, including `completedAt`, optional effort/importance/notes, and derived risk. Course remains deferred to Slice 5.
+Return one Task Detail using the current Slice 5 representation above, including `completedAt`, nullable Course summary, optional effort/importance/notes, and derived risk.
 
 ### Response - 200
 Current Task representation.
@@ -378,27 +381,28 @@ Authentication adds `401 UNAUTHENTICATED` later.
 
 ---
 
-## PUT /api/tasks/{taskId} (Slice 4)
-Edit core Task fields plus optional planning enrichment from Task Detail.
+## PUT /api/tasks/{taskId} (Slice 5)
+Edit core Task fields, optional Course assignment, and optional planning enrichment from Task Detail.
 
-### Request - Current Slice 4
+### Request - Current Slice 5
 
 ```json
 {
   "title": "Database Final Assignment",
   "dueAt": "2026-11-01T16:59:00Z",
+  "courseId": "933fe6fd-55bc-447a-a40c-eaff32e24f67",
   "estimatedMinutes": 180,
   "importance": "HIGH",
   "notes": "Split the report into sections"
 }
 ```
 
-`estimatedMinutes`, `importance`, and `notes` are optional. Sending them as `null` (or omitting them from this full-replacement request) clears the stored value. Course remains deferred to Slice 5.
+`courseId`, `estimatedMinutes`, `importance`, and `notes` are optional. Sending `courseId: null` clears Course assignment. Sending the planning fields as `null` (or omitting them from this full-replacement request) clears their stored value.
 
 ### Response - 200
 Returns the updated current Task representation with recalculated deadline, recommendation input, and risk data.
 
-### Errors - Current Slice 4
+### Errors - Current Slice 5
 - `400 VALIDATION_ERROR`
 - `404 RESOURCE_NOT_FOUND`
 
@@ -441,6 +445,10 @@ Return the data required by the Today screen in one request.
       "id": "7c40f037-9d59-4b54-839f-b324e92f3b8e",
       "title": "Database Assignment",
       "dueAt": "2026-10-31T16:59:00Z",
+      "course": {
+        "id": "933fe6fd-55bc-447a-a40c-eaff32e24f67",
+        "name": "Data Warehouse"
+      },
       "status": "ACTIVE",
       "createdAt": "2026-10-28T14:00:00Z",
       "updatedAt": "2026-10-28T14:00:00Z",
@@ -458,7 +466,7 @@ Return the data required by the Today screen in one request.
 }
 ```
 
-Slice 2 deliberately uses the minimal Task shape already implemented by Core Capture. Later slices may enrich the nested Task with Course, effort, importance, and risk data without moving recommendation ordering into the frontend.
+The Today response is now enriched through Slice 5 with optional Course, effort, importance, and risk data. Course is display context only and does not affect recommendation scoring or risk. Recommendation ordering remains backend-owned.
 
 If no active Tasks exist:
 
@@ -508,12 +516,13 @@ Returns Course representation.
 
 ### Errors
 - `400 VALIDATION_ERROR`
-- `401 UNAUTHENTICATED`
+
+Authentication adds `401 UNAUTHENTICATED` later.
 
 ---
 
 ## GET /api/courses
-Return Courses owned by current User.
+Return Courses in the current single-user dataset. After authentication is introduced, this becomes ownership-scoped to the authenticated User.
 
 ### Response - 200
 
@@ -528,7 +537,7 @@ Return Courses owned by current User.
 }
 ```
 
-Suggested ordering: name ascending.
+Ordering: name ascending, then stable ID ordering.
 
 ---
 
@@ -555,7 +564,7 @@ Returns updated Course.
 ## DELETE /api/courses/{courseId}
 Remove a Course.
 
-Linked Tasks remain and become unassigned.
+Linked Tasks remain and become unassigned. The database foreign key uses `ON DELETE SET NULL` as the structural guarantee.
 
 ### Response - 204
 No response body.

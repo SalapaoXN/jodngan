@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router';
 
 import { AppHeader } from '../../app/AppHeader';
 import { ApiError } from '../../lib/api/client';
+import { CourseSelector } from '../courses/CourseSelector';
 import { todayQueryKey } from '../today/queries';
 import { DateTimePicker } from './DateTimePicker';
 import { formatRemainingTime } from './deadlineLabel';
@@ -18,6 +19,7 @@ import type { Task } from './types';
 interface TaskDetailValues {
   title: string;
   dueAt: string;
+  courseId: string;
   estimatedMinutes: string;
   importance: '' | TaskImportance;
   notes: string;
@@ -46,6 +48,7 @@ export function TaskDetailPage() {
       reset({
         title: taskQuery.data.title,
         dueAt: toLocalDateTimeInput(taskQuery.data.dueAt),
+        courseId: taskQuery.data.course?.id ?? '',
         estimatedMinutes: taskQuery.data.estimatedMinutes?.toString() ?? '',
         importance: taskQuery.data.importance ?? '',
         notes: taskQuery.data.notes ?? '',
@@ -66,6 +69,7 @@ export function TaskDetailPage() {
     mutationFn: (values: TaskDetailValues) => updateTask(taskId, {
       title: values.title.trim(),
       dueAt: new Date(values.dueAt).toISOString(),
+      courseId: values.courseId || null,
       estimatedMinutes: values.estimatedMinutes.trim() === '' ? null : Number(values.estimatedMinutes),
       importance: values.importance === '' ? null : values.importance,
       notes: values.notes.trim() === '' ? null : values.notes.trim(),
@@ -175,6 +179,19 @@ export function TaskDetailPage() {
             />
             {errors.dueAt && <p id="detail-task-due-error" className="field-error" role="alert">{errors.dueAt.message}</p>}
           </div>
+
+          <Controller
+            name="courseId"
+            control={control}
+            render={({ field }) => (
+              <CourseSelector
+                id="detail-task-course"
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
 
           <section className="planning-detail-section" aria-labelledby="planning-detail-heading">
             <div className="planning-detail-heading">

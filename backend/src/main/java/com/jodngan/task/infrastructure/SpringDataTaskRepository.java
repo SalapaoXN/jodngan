@@ -11,5 +11,9 @@ public interface SpringDataTaskRepository extends JpaRepository<TaskEntity, UUID
 
     List<TaskEntity> findByStatusOrderByDueAtAscIdAsc(TaskStatus status);
 
+    List<TaskEntity> findByStatusAndCourseIdOrderByDueAtAscIdAsc(TaskStatus status, UUID courseId);
+
     List<TaskEntity> findByStatusOrderByCompletedAtDescIdAsc(TaskStatus status);
+
+    List<TaskEntity> findByStatusAndCourseIdOrderByCompletedAtDescIdAsc(TaskStatus status, UUID courseId);
 }

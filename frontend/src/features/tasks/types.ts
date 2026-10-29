@@ -1,3 +1,4 @@
+import type { Course } from '../courses/types';
 import type { TaskImportance, TaskRisk } from './planningTypes';
 
 export interface TaskPlanning {
@@ -10,6 +11,7 @@ export interface Task {
   id: string;
   title: string;
   dueAt: string;
+  course: Course | null;
   estimatedMinutes: number | null;
   importance: TaskImportance | null;
   notes: string | null;
@@ -27,11 +29,13 @@ export interface TaskListResponse {
 export interface CreateTaskInput {
   title: string;
   dueAt: string;
+  courseId: string | null;
 }
 
 export interface UpdateTaskInput {
   title: string;
   dueAt: string;
+  courseId: string | null;
   estimatedMinutes: number | null;
   importance: TaskImportance | null;
   notes: string | null;

@@ -35,6 +35,7 @@ public record TodayResponse(
                     task.id(),
                     task.title(),
                     task.dueAt(),
+                    task.course() == null ? null : TaskResponse.CourseSummary.from(task.course()),
                     task.estimatedMinutes(),
                     task.importance(),
                     null,

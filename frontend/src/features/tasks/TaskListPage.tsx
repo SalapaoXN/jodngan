@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { AppHeader } from '../../app/AppHeader';
 import { ApiError } from '../../lib/api/client';
+import { CourseManager } from '../courses/CourseManager';
+import { useCourses } from '../courses/queries';
 import { todayQueryKey } from '../today/queries';
 import { completeTask, reopenTask } from './lifecycleApi';
 import { completedTasksQueryKey, taskDetailQueryKey, useCompletedTasks } from './lifecycleQueries';
@@ -11,9 +13,15 @@ import { TaskLifecycleCard } from './TaskLifecycleCard';
 
 export function TaskListPage() {
   const [selectedTab, setSelectedTab] = useState<'ACTIVE' | 'COMPLETED'>('ACTIVE');
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const queryClient = useQueryClient();
-  const activeQuery = useActiveTasks();
-  const completedQuery = useCompletedTasks();
+  const coursesQuery = useCourses();
+  const selectedCourseStillExists = !selectedCourseId
+    || !coursesQuery.data
+    || coursesQuery.data.items.some((course) => course.id === selectedCourseId);
+  const effectiveCourseId = selectedCourseStillExists ? selectedCourseId : '';
+  const activeQuery = useActiveTasks(effectiveCourseId || null);
+  const completedQuery = useCompletedTasks(effectiveCourseId || null);
   const currentQuery = selectedTab === 'ACTIVE' ? activeQuery : completedQuery;
 
   async function refreshAfterLifecycleChange(taskId: string) {
@@ -49,6 +57,7 @@ export function TaskListPage() {
       </header>
 
       <QuickAddTask />
+      <CourseManager />
 
       <section className="task-section content-block" aria-labelledby="task-list-heading">
         <div className="section-heading section-heading-copy">
@@ -59,25 +68,41 @@ export function TaskListPage() {
           {currentQuery.data && <span className="count-badge">{currentQuery.data.items.length}</span>}
         </div>
 
-        <div className="task-tabs" role="tablist" aria-label="Task status">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedTab === 'ACTIVE'}
-            className={selectedTab === 'ACTIVE' ? 'tab-button active' : 'tab-button'}
-            onClick={() => setSelectedTab('ACTIVE')}
-          >
-            Active
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={selectedTab === 'COMPLETED'}
-            className={selectedTab === 'COMPLETED' ? 'tab-button active' : 'tab-button'}
-            onClick={() => setSelectedTab('COMPLETED')}
-          >
-            Completed
-          </button>
+        <div className="task-list-controls">
+          <div className="course-filter">
+            <label htmlFor="task-course-filter">Course</label>
+            <select
+              id="task-course-filter"
+              value={effectiveCourseId}
+              onChange={(event) => setSelectedCourseId(event.target.value)}
+            >
+              <option value="">All courses</option>
+              {coursesQuery.data?.items.map((course) => (
+                <option key={course.id} value={course.id}>{course.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="task-tabs" role="tablist" aria-label="Task status">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedTab === 'ACTIVE'}
+              className={selectedTab === 'ACTIVE' ? 'tab-button active' : 'tab-button'}
+              onClick={() => setSelectedTab('ACTIVE')}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedTab === 'COMPLETED'}
+              className={selectedTab === 'COMPLETED' ? 'tab-button active' : 'tab-button'}
+              onClick={() => setSelectedTab('COMPLETED')}
+            >
+              Completed
+            </button>
+          </div>
         </div>
 
         {currentQuery.isPending && <p role="status">Loading tasks…</p>}

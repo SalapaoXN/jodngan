@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface DateTimePickerProps {
   id: string;
@@ -85,16 +85,6 @@ export function DateTimePicker({
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
 
-  useEffect(() => {
-    const next = splitLocalDateTime(value);
-    setDatePart(next.datePart);
-    setTimePart(next.timePart);
-    const selected = dateFromPart(next.datePart);
-    if (selected) {
-      setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1));
-    }
-  }, [value]);
-
   const calendarDays = useMemo(() => {
     const year = visibleMonth.getFullYear();
     const month = visibleMonth.getMonth();
@@ -110,6 +100,21 @@ export function DateTimePicker({
       };
     });
   }, [visibleMonth]);
+
+  function togglePicker() {
+    if (isOpen) {
+      setIsOpen(false);
+      return;
+    }
+
+    const next = splitLocalDateTime(value);
+    setDatePart(next.datePart);
+    setTimePart(next.timePart);
+    const selected = dateFromPart(next.datePart);
+    const base = selected ?? new Date();
+    setVisibleMonth(new Date(base.getFullYear(), base.getMonth(), 1));
+    setIsOpen(true);
+  }
 
   function commit(nextDatePart: string, nextTimePart: string) {
     if (nextDatePart && nextTimePart) {
@@ -190,7 +195,7 @@ export function DateTimePicker({
         aria-controls={`${id}-panel`}
         aria-invalid={invalid}
         aria-describedby={describedBy}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={togglePicker}
         onBlur={onBlur}
       >
         <span className="date-time-trigger-icon" aria-hidden="true">

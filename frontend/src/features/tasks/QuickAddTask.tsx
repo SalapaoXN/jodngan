@@ -2,15 +2,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import { CourseSelector } from '../courses/CourseSelector';
 import { todayQueryKey } from '../today/queries';
 import { createTask } from './api';
 import { DateTimePicker } from './DateTimePicker';
 import { activeTasksQueryKey } from './queries';
-import type { TaskListResponse } from './types';
 
 interface QuickAddValues {
   title: string;
   dueAt: string;
+  courseId: string;
 }
 
 export function QuickAddTask() {
@@ -22,14 +23,11 @@ export function QuickAddTask() {
     register,
     reset,
     formState: { errors },
-  } = useForm<QuickAddValues>({ defaultValues: { title: '', dueAt: '' } });
+  } = useForm<QuickAddValues>({ defaultValues: { title: '', dueAt: '', courseId: '' } });
 
   const createMutation = useMutation({
     mutationFn: createTask,
-    onSuccess: (createdTask) => {
-      queryClient.setQueryData<TaskListResponse>(activeTasksQueryKey, (current) => ({
-        items: [...(current?.items ?? []), createdTask],
-      }));
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: activeTasksQueryKey });
       void queryClient.invalidateQueries({ queryKey: todayQueryKey });
       reset();
@@ -47,6 +45,7 @@ export function QuickAddTask() {
     createMutation.mutate({
       title: values.title.trim(),
       dueAt: new Date(values.dueAt).toISOString(),
+      courseId: values.courseId || null,
     });
   }
 
@@ -117,6 +116,19 @@ export function QuickAddTask() {
               </p>
             )}
           </div>
+
+          <Controller
+            name="courseId"
+            control={control}
+            render={({ field }) => (
+              <CourseSelector
+                id="task-course"
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
 
           {createMutation.isError && (
             <p className="form-error" role="alert">

@@ -29,15 +29,16 @@ Bootstrap references:
 - Add local development configuration without committing secrets.
 
 ## Phase 3 - Core Product
-Status: Slice 1 Core Capture, Slice 2 Scheduling Engine + Today, and Slice 3 Tasks + Lifecycle are complete and verified. Slice 4 Progressive Enrichment + Risk is implemented; manual smoke passed and automated verification is pending.
+Status: Slice 1 Core Capture, Slice 2 Scheduling Engine + Today, Slice 3 Tasks + Lifecycle, Slice 4 Progressive Enrichment + Risk, and Slice 5 Courses are complete and verified end to end.
 
 Implementation task references:
 - `docs/plans/codex-core-task.md`
 - `docs/plans/codex-scheduling-task.md`
 - `docs/plans/codex-lifecycle-task.md`
 - `docs/plans/codex-enrichment-risk-task.md`
+- `docs/plans/codex-courses-task.md`
 
-Current target: verify Slice 4 Progressive Enrichment + Risk end to end before beginning Slice 5 Courses.
+Current target: begin Slice 6 Authentication + Ownership.
 
 Current mode: single-user trial. Authentication is deferred until the core planning flow is usable and tested.
 
@@ -45,8 +46,8 @@ Current mode: single-user trial. Authentication is deferred until the core plann
 - [x] Remaining-time / overdue feedback.
 - [x] Recommendation for what to work on next.
 - [x] Task lifecycle and redesigned task-management UI verified end to end.
-- [x] Progressive planning fields and conservative risk implemented; manual smoke passed, automated verification pending.
-- Optional Course organization.
+- [x] Progressive planning fields and conservative risk verified end to end.
+- [x] Optional Course organization verified end to end.
 - User account and authentication after the core value is proven.
 
 ## Phase 4 - Scheduling Engine

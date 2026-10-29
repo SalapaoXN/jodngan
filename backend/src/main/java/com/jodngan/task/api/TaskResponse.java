@@ -15,6 +15,7 @@ public record TaskResponse(
         UUID id,
         String title,
         Instant dueAt,
+        CourseSummary course,
         Integer estimatedMinutes,
         TaskImportance importance,
         String notes,
@@ -30,6 +31,7 @@ public record TaskResponse(
                 task.id(),
                 task.title(),
                 task.dueAt(),
+                view.course() == null ? null : CourseSummary.from(view.course()),
                 task.estimatedMinutes(),
                 task.importance(),
                 task.notes(),
@@ -46,6 +48,12 @@ public record TaskResponse(
                                         task.estimatedMinutes(),
                                         view.planning().remainingSeconds(),
                                         view.planning().overdue()))));
+    }
+
+    public record CourseSummary(UUID id, String name) {
+        public static CourseSummary from(com.jodngan.course.application.CourseData course) {
+            return new CourseSummary(course.id(), course.name());
+        }
     }
 
     public record Planning(long remainingSeconds, boolean overdue, Risk risk) {

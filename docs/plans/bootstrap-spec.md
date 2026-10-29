@@ -1,7 +1,7 @@
 # Project Bootstrap Specification
 
 ## Status
-Slice 0 foundation is complete and ready for Slice 1. Frontend typecheck/lint/test/build passed, and backend `mvn test` passed with PostgreSQL Testcontainers and Flyway startup. A manual browser smoke through the Vite `/api` proxy remains a useful sanity check but is not a blocker for Slice 1.
+Slice 0 foundation is complete. This document records the original bootstrap decisions; the current implementation order, migration sequence, and feature status in `vertical-slices.md`, `PLANS.md`, and the current Flyway files supersede the early sequence examples below.
 
 ## Verified Baseline
 Verified or locked on 2026-10-28:

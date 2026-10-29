@@ -9,6 +9,7 @@ public record Task(
         UUID id,
         String title,
         Instant dueAt,
+        UUID courseId,
         Integer estimatedMinutes,
         TaskImportance importance,
         String notes,
@@ -45,13 +46,14 @@ public record Task(
         }
     }
 
-    public static Task create(String title, Instant dueAt, Instant now) {
-        return new Task(UUID.randomUUID(), title, dueAt, null, null, null, TaskStatus.ACTIVE, null, now, now);
+    public static Task create(String title, Instant dueAt, UUID courseId, Instant now) {
+        return new Task(UUID.randomUUID(), title, dueAt, courseId, null, null, null, TaskStatus.ACTIVE, null, now, now);
     }
 
     public Task edit(
             String title,
             Instant dueAt,
+            UUID courseId,
             Integer estimatedMinutes,
             TaskImportance importance,
             String notes,
@@ -60,6 +62,7 @@ public record Task(
                 id,
                 title,
                 dueAt,
+                courseId,
                 estimatedMinutes,
                 importance,
                 notes,
@@ -74,7 +77,7 @@ public record Task(
             return this;
         }
         return new Task(
-                id, title, dueAt, estimatedMinutes, importance, notes,
+                id, title, dueAt, courseId, estimatedMinutes, importance, notes,
                 TaskStatus.COMPLETED, now, createdAt, now);
     }
 
@@ -83,7 +86,7 @@ public record Task(
             return this;
         }
         return new Task(
-                id, title, dueAt, estimatedMinutes, importance, notes,
+                id, title, dueAt, courseId, estimatedMinutes, importance, notes,
                 TaskStatus.ACTIVE, null, createdAt, now);
     }
 

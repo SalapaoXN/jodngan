@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.jodngan.course.application.CourseNotFoundException;
 import com.jodngan.task.application.TaskNotFoundException;
 
 @RestControllerAdvice
@@ -45,6 +46,12 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiErrorResponse> handleTaskNotFound() {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 new ApiErrorResponse("RESOURCE_NOT_FOUND", "Task was not found", null));
+    }
+
+    @ExceptionHandler(CourseNotFoundException.class)
+    ResponseEntity<ApiErrorResponse> handleCourseNotFound() {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ApiErrorResponse("RESOURCE_NOT_FOUND", "Course was not found", null));
     }
 
     @ExceptionHandler(Exception.class)

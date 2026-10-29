@@ -42,6 +42,7 @@ function task(overrides: Partial<Task> = {}): Task {
     id: 'a6c0ce45-9efb-4c26-bcf4-4da02cbcc4fb',
     title: 'Database Assignment',
     dueAt: '2030-03-15T13:45:00Z',
+    course: null,
     estimatedMinutes: null,
     importance: null,
     notes: null,
@@ -99,6 +100,9 @@ function mockReadApis(items: Task[] = [], today = todayResponse()) {
     }
     if (path === '/api/today') {
       return jsonResponse(today);
+    }
+    if (path === '/api/courses') {
+      return jsonResponse({ items: [] });
     }
     throw new Error(`Unexpected request: ${path}`);
   });
@@ -167,6 +171,9 @@ describe('single-user Today flow', () => {
       if (path === '/api/today') {
         return jsonResponse(todayResponse(saved ? recommendation(savedTask) : null));
       }
+      if (path === '/api/courses') {
+        return jsonResponse({ items: [] });
+      }
       throw new Error(`Unexpected request: ${path}`);
     });
     renderApp();
@@ -193,6 +200,7 @@ describe('single-user Today flow', () => {
       expect(JSON.parse(postCall?.[1]?.body as string)).toEqual({
         title: 'Database Assignment',
         dueAt: new Date(dueAtInput).toISOString(),
+        courseId: null,
       });
       expect(fetchMock.mock.calls.filter(([input]) => String(input) === '/api/today').length).toBeGreaterThan(1);
     });
@@ -313,6 +321,9 @@ describe('single-user Today flow', () => {
       }
       if (path === '/api/today') {
         return jsonResponse(todayResponse(saved ? recommendation(savedTask) : null));
+      }
+      if (path === '/api/courses') {
+        return jsonResponse({ items: [] });
       }
       throw new Error(`Unexpected request: ${path}`);
     });

@@ -3,7 +3,7 @@
 ## Status
 Accepted as the full deterministic V1 rule set.
 
-Implementation is staged progressively: Slice 2 activated deadline urgency, deterministic ranking, recommendation reason, and start guidance using deadline-only Tasks. Slice 4 implements effort pressure, importance adjustment, enriched reasons/start guidance, and conservative workload-based risk; verification is pending.
+Implementation is complete through Slice 4: Slice 2 activated deadline urgency, deterministic ranking, recommendation reason, and start guidance using deadline-only Tasks; Slice 4 added effort pressure, importance adjustment, enriched reasons/start guidance, and conservative workload-based risk. Course organization in Slice 5 does not affect these rules.
 
 ## Goal
 Answer two questions without AI or hidden assumptions:

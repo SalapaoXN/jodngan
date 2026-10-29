@@ -20,7 +20,7 @@ JodNgan combines deadlines, estimated effort, priority, and available time to re
 Start as a modular monolith. Add infrastructure only when a concrete requirement justifies it.
 
 ## Project Status
-Slice 1 Core Capture, Slice 2 deterministic Today recommendation, and Slice 3 Tasks + Lifecycle are complete and verified for the private single-user trial. Slice 4 Progressive Enrichment + Risk is implemented and passed manual smoke; automated verification remains pending. Task Detail can add optional effort, importance, and notes; deterministic ranking reacts to effort/importance; and conservative risk is surfaced without changing Quick Add. Authentication remains intentionally deferred until the core planning flow is proven useful.
+Slice 1 Core Capture, Slice 2 deterministic Today recommendation, Slice 3 Tasks + Lifecycle, Slice 4 Progressive Enrichment + Risk, and Slice 5 Courses are complete and verified end to end for the private single-user trial. Courses can be created, renamed, removed, assigned optionally in Quick Add or Task Detail, and used to filter Tasks; removing a Course leaves its Tasks intact and unassigned. Slice 6 Authentication + Ownership is the next target.
 
 ## Repository Guide
 - `AGENTS.md` - persistent repository rules for coding agents.

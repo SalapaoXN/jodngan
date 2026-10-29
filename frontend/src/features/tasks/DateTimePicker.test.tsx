@@ -44,7 +44,7 @@ describe('DateTimePicker', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Nov 10, 2026/i }));
+    fireEvent.click(screen.getByRole('button', { name: /18:30/ }));
     const picker = screen.getByRole('group', { name: 'Due date and time picker' });
     fireEvent.click(within(picker).getByRole('button', { name: 'Today' }));
 

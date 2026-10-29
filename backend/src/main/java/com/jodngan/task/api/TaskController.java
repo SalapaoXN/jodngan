@@ -30,13 +30,15 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody CreateTaskRequest request) {
         TaskResponse response = TaskResponse.from(
-                taskApplicationService.createTask(request.title(), request.dueAt()));
+                taskApplicationService.createTask(request.title(), request.dueAt(), request.courseId()));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
-    public TaskListResponse listTasks(@RequestParam(defaultValue = "ACTIVE") TaskStatus status) {
-        return TaskListResponse.from(taskApplicationService.findTasks(status));
+    public TaskListResponse listTasks(
+            @RequestParam(defaultValue = "ACTIVE") TaskStatus status,
+            @RequestParam(required = false) UUID courseId) {
+        return TaskListResponse.from(taskApplicationService.findTasks(status, courseId));
     }
 
     @GetMapping("/{taskId}")
@@ -50,6 +52,7 @@ public class TaskController {
                 taskId,
                 request.title(),
                 request.dueAt(),
+                request.courseId(),
                 request.estimatedMinutes(),
                 request.importance(),
                 request.notes()));

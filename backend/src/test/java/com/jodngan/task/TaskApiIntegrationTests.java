@@ -86,6 +86,9 @@ class TaskApiIntegrationTests {
         assertTrue(Arrays.stream(flyway.info().applied())
                 .anyMatch(migration -> migration.getVersion() != null
                         && "2".equals(migration.getVersion().getVersion())));
+        assertTrue(Arrays.stream(flyway.info().applied())
+                .anyMatch(migration -> migration.getVersion() != null
+                        && "3".equals(migration.getVersion().getVersion())));
         assertEquals(0L, jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM information_schema.tables "
                         + "WHERE table_schema = 'public' AND table_name = 'users'",
@@ -95,10 +98,19 @@ class TaskApiIntegrationTests {
                         + "WHERE table_schema = 'public' AND table_name = 'tasks' "
                         + "AND column_name IN ('estimated_minutes', 'importance', 'notes')",
                 Long.class));
+        assertEquals(1L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.tables "
+                        + "WHERE table_schema = 'public' AND table_name = 'courses'",
+                Long.class));
+        assertEquals(1L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.columns "
+                        + "WHERE table_schema = 'public' AND table_name = 'tasks' "
+                        + "AND column_name = 'course_id'",
+                Long.class));
         assertEquals(0L, jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM information_schema.columns "
                         + "WHERE table_schema = 'public' AND table_name = 'tasks' "
-                        + "AND column_name IN ('user_id', 'course_id')",
+                        + "AND column_name = 'user_id'",
                 Long.class));
     }
 

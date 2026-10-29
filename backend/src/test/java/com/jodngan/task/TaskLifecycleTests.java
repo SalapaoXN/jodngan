@@ -53,6 +53,7 @@ class TaskLifecycleTests {
         Task edited = completed.edit(
                 "  Renamed task  ",
                 DUE_AT.plusSeconds(3_600),
+                null,
                 180,
                 null,
                 "  Keep this note  ",
@@ -72,6 +73,7 @@ class TaskLifecycleTests {
                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
                 "Lifecycle task",
                 DUE_AT,
+                null,
                 null,
                 null,
                 null,

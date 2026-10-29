@@ -1,7 +1,7 @@
 # Slice 4 - Progressive Enrichment + Risk Implementation Task
 
 ## Status
-Implemented. Manual enrichment/risk smoke passed; automated verification is pending.
+Complete. Backend/frontend automated verification and manual enrichment/risk smoke passed.
 
 ## Goal
 Improve recommendation quality after capture without adding friction to Quick Add.
@@ -53,11 +53,11 @@ Do not add:
 - hard delete
 
 ## Verification
-- [ ] Backend: `mvn test`
-- [ ] Frontend: `npm run typecheck`
-- [ ] Frontend: `npm run lint`
-- [ ] Frontend: `npm test`
-- [ ] Frontend: `npm run build`
+- [x] Backend: `mvn test`
+- [x] Frontend: `npm run typecheck`
+- [x] Frontend: `npm run lint`
+- [x] Frontend: `npm test`
+- [x] Frontend: `npm run build`
 - [x] Manual enrichment/risk smoke
 
 ## Manual Smoke

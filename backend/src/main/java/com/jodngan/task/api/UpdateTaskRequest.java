@@ -1,6 +1,7 @@
 package com.jodngan.task.api;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import com.jodngan.task.domain.TaskImportance;
 import jakarta.validation.constraints.NotBlank;
@@ -14,6 +15,7 @@ public record UpdateTaskRequest(
         String title,
         @NotNull(message = "Due date and time is required")
         Instant dueAt,
+        UUID courseId,
         @Positive(message = "Estimated effort must be greater than zero")
         Integer estimatedMinutes,
         TaskImportance importance,
