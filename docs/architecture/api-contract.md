@@ -197,8 +197,8 @@ Return the current authenticated user.
 
 # Task Representation
 
-## Current Slice 1 Task
-The single-user trial initially returns only fields needed for capture and deadline feedback:
+## Current Slice 1-3 Task
+The single-user trial currently returns the fields needed for capture, deadline feedback, and lifecycle state:
 
 ```json
 {
@@ -206,6 +206,7 @@ The single-user trial initially returns only fields needed for capture and deadl
   "title": "Database Assignment",
   "dueAt": "2026-10-31T16:59:00Z",
   "status": "ACTIVE",
+  "completedAt": null,
   "createdAt": "2026-10-28T14:00:00Z",
   "updatedAt": "2026-10-28T14:00:00Z",
   "planning": {
@@ -252,8 +253,8 @@ Used by Today and Tasks lists.
 
 `course`, `estimatedMinutes`, and `importance` may be null.
 
-## Task Detail
-Adds editable fields:
+## Target Enriched Task Detail (Slice 4/5)
+Later slices add progressive planning and Course fields:
 
 ```json
 {
@@ -316,14 +317,13 @@ Returns the current Task representation with derived remaining-time data immedia
 List Tasks in the current single-user dataset. After authentication is introduced, this becomes ownership-scoped to the authenticated User.
 
 ### Query Parameters
-Current Slice 1 has no required query parameters and returns ACTIVE Tasks only.
-
-Later slices add:
+Slice 3 supports lifecycle filtering:
 
 ```text
-status=ACTIVE|COMPLETED
-courseId=<uuid>       optional
+status=ACTIVE|COMPLETED   optional, defaults to ACTIVE
 ```
+
+Course filtering is added later in Slice 5.
 
 ### Response - 200
 
@@ -335,6 +335,7 @@ courseId=<uuid>       optional
       "title": "Database Assignment",
       "dueAt": "2026-10-31T16:59:00Z",
       "status": "ACTIVE",
+      "completedAt": null,
       "createdAt": "2026-10-28T14:00:00Z",
       "updatedAt": "2026-10-28T14:00:00Z",
       "planning": {
@@ -346,69 +347,66 @@ courseId=<uuid>       optional
 }
 ```
 
-This is the current Slice 1/2 Task list shape. Enriched Course, effort, importance, due-today, and risk fields belong to later slices.
+This is the current Slice 1-3 Task list shape. Enriched Course, effort, importance, due-today, and risk fields belong to later slices.
 
 Ordering:
-- Current Slice 1/2: ACTIVE Tasks by due date ascending, then stable ID ordering
-- Later lifecycle slice: COMPLETED Tasks by completed date descending
+- ACTIVE Tasks by due date ascending, then stable ID ordering
+- COMPLETED Tasks by completed date descending, then stable ID ordering
 
 This endpoint is a Task list, not the scheduling ranking endpoint.
 
 ---
 
 ## GET /api/tasks/{taskId}
-Return one Task Detail.
+Return one Task Detail. In Slice 3 this uses the current Task representation above, including `completedAt`; enriched effort/Course fields arrive later.
 
 ### Response - 200
-Task Detail representation.
+Current Task representation.
 
-### Errors - Current Slice 1
+### Errors - Current Slice 3
 - `404 RESOURCE_NOT_FOUND`
 
 Authentication adds `401 UNAUTHENTICATED` later.
 
 ---
 
-## PUT /api/tasks/{taskId} (Later Slice)
-Replace the editable Task fields from Task Detail.
+## PUT /api/tasks/{taskId} (Slice 3)
+Edit the fields currently available in Task Detail.
 
-### Request
+### Request - Current Slice 3
 
 ```json
 {
   "title": "Database Final Assignment",
-  "dueAt": "2026-11-01T16:59:00Z",
-  "courseId": null,
-  "estimatedMinutes": 360,
-  "importance": "HIGH",
-  "notes": "Finish schema and SQL section"
+  "dueAt": "2026-11-01T16:59:00Z"
 }
 ```
 
-Explicit null clears an optional field.
+Course, estimated effort, importance, and notes are added by later slices and are intentionally not accepted yet.
 
 ### Response - 200
-Returns updated Task Detail with recalculated planning data.
+Returns the updated current Task representation with recalculated deadline planning data.
 
-### Errors
+### Errors - Current Slice 3
 - `400 VALIDATION_ERROR`
 - `404 RESOURCE_NOT_FOUND`
-- `401 UNAUTHENTICATED`
+
+Authentication adds `401 UNAUTHENTICATED` later.
 
 ---
 
-## POST /api/tasks/{taskId}/complete (Later Slice)
+## POST /api/tasks/{taskId}/complete (Slice 3)
 Mark Task complete.
 
-The operation is idempotent from the client's point of view. Completing an already completed owned Task returns its current completed state.
+The operation is idempotent from the client's point of view. Completing an already completed Task returns its current completed state. `completedAt` is recorded on the first transition to COMPLETED.
 
 ### Response - 200
 Returns updated Task Detail.
 
 ---
 
-## POST /api/tasks/{taskId}/reopen (Later Slice)
-Return Task to ACTIVE state.
+## POST /api/tasks/{taskId}/reopen (Slice 3)
+Return Task to ACTIVE state and clear `completedAt`.
 
 The operation is idempotent from the client's point of view.
 

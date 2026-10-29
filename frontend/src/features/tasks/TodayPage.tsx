@@ -1,3 +1,4 @@
+import { AppHeader } from '../../app/AppHeader';
 import { ApiError } from '../../lib/api/client';
 import { RecommendationCard } from '../today/RecommendationCard';
 import { useToday } from '../today/queries';
@@ -9,15 +10,29 @@ export function TodayPage() {
   const todayQuery = useToday();
   const tasksQuery = useActiveTasks();
 
+  const todayLabel = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
+
   return (
-    <main className="page-shell">
-      <header className="today-header">
-        <p className="eyebrow">JodNgan</p>
-        <h1>Today</h1>
-        <p>Keep your deadlines in view and capture new work quickly.</p>
+    <main className="page-shell product-shell">
+      <AppHeader active="today" />
+
+      <header className="today-header page-hero">
+        <div>
+          <p className="eyebrow">{todayLabel}</p>
+          <h1>Today</h1>
+          <p>See what deserves your attention, then capture anything new without breaking focus.</p>
+        </div>
+        <div className="hero-note" aria-label="Planning mode">
+          <span className="hero-note-dot" aria-hidden="true" />
+          <span>Plan one step at a time</span>
+        </div>
       </header>
 
-      <section className="recommendation-section" aria-label="Today recommendation">
+      <section className="recommendation-section content-block" aria-label="Today recommendation">
         {todayQuery.isPending && (
           <div className="recommendation-state">
             <p role="status">กำลังจัดลำดับงาน…</p>
@@ -50,10 +65,13 @@ export function TodayPage() {
 
       <QuickAddTask />
 
-      <section className="task-section" aria-labelledby="tasks-heading">
-        <div className="section-heading">
-          <h2 id="tasks-heading">Your tasks</h2>
-          {tasksQuery.data && <span>{tasksQuery.data.items.length}</span>}
+      <section className="task-section content-block" aria-labelledby="tasks-heading">
+        <div className="section-heading section-heading-copy">
+          <div>
+            <p className="section-kicker">Active work</p>
+            <h2 id="tasks-heading">Your tasks</h2>
+          </div>
+          {tasksQuery.data && <span className="count-badge">{tasksQuery.data.items.length}</span>}
         </div>
 
         {tasksQuery.isPending && <p role="status">Loading tasks…</p>}

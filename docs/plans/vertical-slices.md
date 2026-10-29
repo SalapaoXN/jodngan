@@ -127,6 +127,8 @@ The trial user can add multiple Tasks and JodNgan clearly answers which one shou
 
 # Slice 3 - Tasks + Lifecycle
 
+**Status: complete and verified end to end.**
+
 ## Goal
 Complete the basic Task management loop.
 
@@ -151,7 +153,7 @@ Implement:
 - completed Task leaves active list
 - reopen returns it
 - status/completedAt consistency
-- owned resource lookups
+- single-user resource lookups; ownership-specific coverage remains deferred to Slice 6
 - optional fields may be cleared when introduced
 
 ## Done When

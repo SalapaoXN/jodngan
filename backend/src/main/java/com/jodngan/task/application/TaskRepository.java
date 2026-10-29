@@ -12,5 +12,7 @@ public interface TaskRepository {
 
     List<Task> findActiveTasks();
 
+    List<Task> findCompletedTasks();
+
     Optional<Task> findById(UUID id);
 }

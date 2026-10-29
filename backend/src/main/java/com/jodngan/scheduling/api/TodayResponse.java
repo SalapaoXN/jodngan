@@ -36,6 +36,7 @@ public record TodayResponse(
                     task.title(),
                     task.dueAt(),
                     TaskStatus.ACTIVE,
+                    null,
                     task.createdAt(),
                     task.updatedAt(),
                     new TaskResponse.Planning(

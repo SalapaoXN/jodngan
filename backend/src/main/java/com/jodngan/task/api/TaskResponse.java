@@ -11,6 +11,7 @@ public record TaskResponse(
         String title,
         Instant dueAt,
         TaskStatus status,
+        Instant completedAt,
         Instant createdAt,
         Instant updatedAt,
         Planning planning) {
@@ -22,6 +23,7 @@ public record TaskResponse(
                 task.title(),
                 task.dueAt(),
                 task.status(),
+                task.completedAt(),
                 task.createdAt(),
                 task.updatedAt(),
                 new Planning(view.planning().remainingSeconds(), view.planning().overdue()));

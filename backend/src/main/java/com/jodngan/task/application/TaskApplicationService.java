@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.jodngan.task.domain.Task;
+import com.jodngan.task.domain.TaskStatus;
 
 @Service
 public class TaskApplicationService implements TaskPlanningReader {
@@ -25,9 +26,12 @@ public class TaskApplicationService implements TaskPlanningReader {
         return view(taskRepository.save(Task.create(title, dueAt, now)), now);
     }
 
-    public List<TaskView> findActiveTasks() {
+    public List<TaskView> findTasks(TaskStatus status) {
         Instant now = clock.instant();
-        return taskRepository.findActiveTasks().stream()
+        List<Task> tasks = status == TaskStatus.COMPLETED
+                ? taskRepository.findCompletedTasks()
+                : taskRepository.findActiveTasks();
+        return tasks.stream()
                 .map(task -> view(task, now))
                 .toList();
     }
@@ -38,11 +42,33 @@ public class TaskApplicationService implements TaskPlanningReader {
         return view(task, now);
     }
 
+    public TaskView updateTask(UUID id, String title, Instant dueAt) {
+        Instant now = clock.instant();
+        Task task = requireTask(id).edit(title, dueAt, now);
+        return view(taskRepository.save(task), now);
+    }
+
+    public TaskView completeTask(UUID id) {
+        Instant now = clock.instant();
+        Task task = requireTask(id).complete(now);
+        return view(taskRepository.save(task), now);
+    }
+
+    public TaskView reopenTask(UUID id) {
+        Instant now = clock.instant();
+        Task task = requireTask(id).reopen(now);
+        return view(taskRepository.save(task), now);
+    }
+
     @Override
     public List<TaskPlanningData> findActivePlanningTasks() {
         return taskRepository.findActiveTasks().stream()
                 .map(TaskPlanningData::from)
                 .toList();
+    }
+
+    private Task requireTask(UUID id) {
+        return taskRepository.findById(id).orElseThrow(TaskNotFoundException::new);
     }
 
     private TaskView view(Task task, Instant now) {

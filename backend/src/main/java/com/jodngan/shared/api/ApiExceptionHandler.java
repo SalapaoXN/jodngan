@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.jodngan.task.application.TaskNotFoundException;
 
@@ -32,6 +33,12 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiErrorResponse> handleUnreadableRequest() {
         return ResponseEntity.badRequest().body(
                 new ApiErrorResponse("VALIDATION_ERROR", "Request body is invalid", null));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<ApiErrorResponse> handleTypeMismatch() {
+        return ResponseEntity.badRequest().body(
+                new ApiErrorResponse("VALIDATION_ERROR", "Request parameter is invalid", null));
     }
 
     @ExceptionHandler(TaskNotFoundException.class)

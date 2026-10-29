@@ -32,6 +32,13 @@ public class TaskPersistenceAdapter implements TaskRepository {
     }
 
     @Override
+    public List<Task> findCompletedTasks() {
+        return repository.findByStatusOrderByCompletedAtDescIdAsc(TaskStatus.COMPLETED).stream()
+                .map(TaskEntity::toDomain)
+                .toList();
+    }
+
+    @Override
     public Optional<Task> findById(UUID id) {
         return repository.findById(id).map(TaskEntity::toDomain);
     }

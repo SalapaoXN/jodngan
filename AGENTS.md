@@ -25,3 +25,4 @@ JodNgan is a student workload planning and scheduling application.
 - Product: docs/product/
 - Architecture: docs/architecture/
 - Roadmap: PLANS.md
+- For UI/UX design, interaction refinement, or accessibility review, read `.agents/skills/ux-ui-product-design/SKILL.md` before making material interface changes.

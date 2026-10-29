@@ -37,8 +37,27 @@ public record Task(
         return new Task(UUID.randomUUID(), title, dueAt, TaskStatus.ACTIVE, null, now, now);
     }
 
+    public Task edit(String title, Instant dueAt, Instant now) {
+        return new Task(id, title, dueAt, status, completedAt, createdAt, now);
+    }
+
+    public Task complete(Instant now) {
+        if (status == TaskStatus.COMPLETED) {
+            return this;
+        }
+        return new Task(id, title, dueAt, TaskStatus.COMPLETED, now, createdAt, now);
+    }
+
+    public Task reopen(Instant now) {
+        if (status == TaskStatus.ACTIVE) {
+            return this;
+        }
+        return new Task(id, title, dueAt, TaskStatus.ACTIVE, null, createdAt, now);
+    }
+
     public TaskDeadlineProgress deadlineProgressAt(Instant now) {
         long remainingSeconds = Duration.between(now, dueAt).getSeconds();
-        return new TaskDeadlineProgress(remainingSeconds, dueAt.isBefore(now));
+        boolean overdue = status == TaskStatus.ACTIVE && dueAt.isBefore(now);
+        return new TaskDeadlineProgress(remainingSeconds, overdue);
     }
 }

@@ -17,21 +17,30 @@ export function RecommendationCard({ recommendation }: { recommendation: TodayRe
 
   return (
     <section className="recommendation-card" aria-labelledby="recommendation-heading">
-      <p className="recommendation-kicker">ควรทำต่อ</p>
-      <h2 id="recommendation-heading">{recommendation.task.title}</h2>
-      <p className="recommendation-reason">{recommendation.reason}</p>
-      <div className="recommendation-meta">
-        <span className="guidance-pill">{startGuidanceLabels[recommendation.startGuidance]}</span>
-        <span className={recommendation.task.planning.overdue ? 'deadline overdue' : 'deadline'}>
-          {formatRemainingTime(
-            recommendation.task.planning.remainingSeconds,
-            recommendation.task.planning.overdue,
-          )}
-        </span>
+      <div className="recommendation-accent" aria-hidden="true">→</div>
+      <div className="recommendation-content">
+        <div className="recommendation-title-row">
+          <div>
+            <p className="recommendation-kicker">ควรทำต่อ</p>
+            <h2 id="recommendation-heading">{recommendation.task.title}</h2>
+          </div>
+          <span className="guidance-pill">{startGuidanceLabels[recommendation.startGuidance]}</span>
+        </div>
+
+        <p className="recommendation-reason">{recommendation.reason}</p>
+
+        <div className="recommendation-footer">
+          <span className={recommendation.task.planning.overdue ? 'deadline overdue' : 'deadline'}>
+            {formatRemainingTime(
+              recommendation.task.planning.remainingSeconds,
+              recommendation.task.planning.overdue,
+            )}
+          </span>
+          <p className="recommendation-due">
+            Due <time dateTime={recommendation.task.dueAt}>{localDueDate}</time>
+          </p>
+        </div>
       </div>
-      <p className="recommendation-due">
-        Due <time dateTime={recommendation.task.dueAt}>{localDueDate}</time>
-      </p>
     </section>
   );
 }

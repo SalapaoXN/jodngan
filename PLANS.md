@@ -29,20 +29,22 @@ Bootstrap references:
 - Add local development configuration without committing secrets.
 
 ## Phase 3 - Core Product
-Status: Slice 1 Core Capture and Slice 2 Scheduling Engine + Today are complete and verified.
+Status: Slice 1 Core Capture, Slice 2 Scheduling Engine + Today, and Slice 3 Tasks + Lifecycle are complete and verified.
 
-Completed implementation tasks:
+Implementation task references:
 - `docs/plans/codex-core-task.md`
 - `docs/plans/codex-scheduling-task.md`
+- `docs/plans/codex-lifecycle-task.md`
 
-Next target: Slice 3 Tasks + Lifecycle.
+Current target: begin Slice 4 Progressive Enrichment + Risk.
 
 Current mode: single-user trial. Authentication is deferred until the core planning flow is usable and tested.
 
 - [x] Quick task capture and deadline management.
 - [x] Remaining-time / overdue feedback.
 - [x] Recommendation for what to work on next.
-- Task lifecycle and progressive planning fields.
+- [x] Task lifecycle and redesigned task-management UI verified end to end.
+- Progressive planning fields.
 - Optional Course organization.
 - User account and authentication after the core value is proven.
 

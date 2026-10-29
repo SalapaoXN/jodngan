@@ -21,12 +21,29 @@ function renderApp() {
   );
 }
 
+function localTodayAt(time: string): string {
+  const today = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T${time}`;
+}
+
+function chooseTodayAt(time: string) {
+  const [hour, minute] = time.split(':');
+  fireEvent.click(screen.getByLabelText('Due date and time'));
+  const picker = screen.getByRole('group', { name: 'Due date and time picker' });
+  fireEvent.click(within(picker).getByRole('button', { name: 'Today' }));
+  fireEvent.change(within(picker).getByLabelText('Hour'), { target: { value: hour } });
+  fireEvent.change(within(picker).getByLabelText('Minute'), { target: { value: minute } });
+  fireEvent.click(within(picker).getByRole('button', { name: 'Done' }));
+}
+
 function task(overrides: Partial<Task> = {}): Task {
   return {
     id: 'a6c0ce45-9efb-4c26-bcf4-4da02cbcc4fb',
     title: 'Database Assignment',
     dueAt: '2030-03-15T13:45:00Z',
     status: 'ACTIVE',
+    completedAt: null,
     createdAt: '2030-03-01T00:00:00Z',
     updatedAt: '2030-03-01T00:00:00Z',
     planning: { remainingSeconds: 7_200, overdue: false },
@@ -113,7 +130,7 @@ describe('single-user Today flow', () => {
   });
 
   it('saves a minimal task and refreshes the recommendation', async () => {
-    const dueAtInput = '2030-03-15T13:45';
+    const dueAtInput = localTodayAt('13:45');
     const savedTask = task({
       dueAt: new Date(dueAtInput).toISOString(),
       planning: { remainingSeconds: 7_200, overdue: false },
@@ -139,12 +156,14 @@ describe('single-user Today flow', () => {
     fireEvent.change(screen.getByLabelText('Task name'), {
       target: { value: '  Database Assignment  ' },
     });
-    fireEvent.change(screen.getByLabelText('Due date and time'), {
-      target: { value: dueAtInput },
-    });
+    chooseTodayAt('13:45');
     fireEvent.click(screen.getByRole('button', { name: 'Save task' }));
 
     expect((await screen.findAllByRole('heading', { name: 'Database Assignment' })).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Open →' })).toHaveAttribute(
+      'href',
+      `/tasks/${savedTask.id}`,
+    );
     expect(await screen.findByText('กำหนดส่งใกล้เข้ามา')).toBeInTheDocument();
     expect(screen.getByText('เริ่มวันนี้')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Quick Add' })).not.toBeInTheDocument();
@@ -271,9 +290,7 @@ describe('single-user Today flow', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Add task' }));
     fireEvent.change(screen.getByLabelText('Task name'), { target: { value: 'Retry task' } });
-    fireEvent.change(screen.getByLabelText('Due date and time'), {
-      target: { value: '2030-03-15T13:45' },
-    });
+    chooseTodayAt('13:45');
     fireEvent.click(screen.getByRole('button', { name: 'Save task' }));
 
     expect(await screen.findByText(/Task could not be saved/)).toBeInTheDocument();

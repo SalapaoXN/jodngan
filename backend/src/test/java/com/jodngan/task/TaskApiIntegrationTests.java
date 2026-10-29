@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -252,6 +253,115 @@ class TaskApiIntegrationTests {
                 .andExpect(jsonPath("$.upcomingTasks.length()").value(5))
                 .andExpect(jsonPath("$.upcomingTasks[0].task.title").value("Active 2"))
                 .andExpect(jsonPath("$.upcomingTasks[4].task.title").value("Active 6"));
+    }
+
+    @Test
+    void completeMovesTaskOutOfActiveAndTodayThenReopenReturnsIt() throws Exception {
+        MvcResult createdResult = postTask("Lifecycle task", FIXED_NOW.plusSeconds(3_600))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String id = objectMapper.readTree(createdResult.getResponse().getContentAsString()).get("id").asText();
+
+        MvcResult completedResult = mockMvc.perform(post("/api/tasks/{taskId}/complete", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.completedAt").value(FIXED_NOW.toString()))
+                .andExpect(jsonPath("$.planning.overdue").value(false))
+                .andReturn();
+        JsonNode completed = objectMapper.readTree(completedResult.getResponse().getContentAsString());
+        assertEquals(FIXED_NOW.toString(), completed.get("completedAt").asText());
+
+        mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0));
+        mockMvc.perform(get("/api/tasks").param("status", "COMPLETED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].id").value(id));
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.primaryRecommendation").doesNotExist());
+
+        mockMvc.perform(post("/api/tasks/{taskId}/complete", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completedAt").value(FIXED_NOW.toString()));
+
+        MvcResult reopenedResult = mockMvc.perform(post("/api/tasks/{taskId}/reopen", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andReturn();
+        JsonNode reopened = objectMapper.readTree(reopenedResult.getResponse().getContentAsString());
+        assertTrue(reopened.get("completedAt").isNull());
+
+        mockMvc.perform(get("/api/tasks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(id));
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.primaryRecommendation.task.id").value(id));
+    }
+
+    @Test
+    void updatesTaskTitleAndDeadlineWithoutChangingLifecycleState() throws Exception {
+        MvcResult createdResult = postTask("Original title", FIXED_NOW.plusSeconds(3_600))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String id = objectMapper.readTree(createdResult.getResponse().getContentAsString()).get("id").asText();
+        Instant newDueAt = FIXED_NOW.plusSeconds(7_200);
+
+        mockMvc.perform(put("/api/tasks/{taskId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "title", "  Updated title  ",
+                                "dueAt", newDueAt.toString()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Updated title"))
+                .andExpect(jsonPath("$.dueAt").value(newDueAt.toString()))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.planning.remainingSeconds").value(7_200));
+
+        mockMvc.perform(get("/api/tasks/{taskId}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Updated title"))
+                .andExpect(jsonPath("$.dueAt").value(newDueAt.toString()));
+    }
+
+    @Test
+    void rejectsUnknownTaskStatusAsValidationError() throws Exception {
+        mockMvc.perform(get("/api/tasks").param("status", "ARCHIVED"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("Request parameter is invalid"));
+    }
+
+    @Test
+    void listsCompletedTasksByMostRecentCompletionFirst() throws Exception {
+        MvcResult olderResult = postTask("Older completion", FIXED_NOW.plusSeconds(3_600))
+                .andExpect(status().isCreated())
+                .andReturn();
+        MvcResult newerResult = postTask("Newer completion", FIXED_NOW.plusSeconds(7_200))
+                .andExpect(status().isCreated())
+                .andReturn();
+        UUID olderId = UUID.fromString(
+                objectMapper.readTree(olderResult.getResponse().getContentAsString()).get("id").asText());
+        UUID newerId = UUID.fromString(
+                objectMapper.readTree(newerResult.getResponse().getContentAsString()).get("id").asText());
+
+        jdbcTemplate.update(
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = ?, updated_at = ? WHERE id = ?",
+                java.sql.Timestamp.from(FIXED_NOW.plusSeconds(60)),
+                java.sql.Timestamp.from(FIXED_NOW.plusSeconds(60)),
+                olderId);
+        jdbcTemplate.update(
+                "UPDATE tasks SET status = 'COMPLETED', completed_at = ?, updated_at = ? WHERE id = ?",
+                java.sql.Timestamp.from(FIXED_NOW.plusSeconds(120)),
+                java.sql.Timestamp.from(FIXED_NOW.plusSeconds(120)),
+                newerId);
+
+        mockMvc.perform(get("/api/tasks").param("status", "COMPLETED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].title").value("Newer completion"))
+                .andExpect(jsonPath("$.items[1].title").value("Older completion"));
     }
 
     private org.springframework.test.web.servlet.ResultActions postTask(String title, Instant dueAt)

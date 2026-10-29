@@ -10,4 +10,6 @@ import com.jodngan.task.domain.TaskStatus;
 public interface SpringDataTaskRepository extends JpaRepository<TaskEntity, UUID> {
 
     List<TaskEntity> findByStatusOrderByDueAtAscIdAsc(TaskStatus status);
+
+    List<TaskEntity> findByStatusOrderByCompletedAtDescIdAsc(TaskStatus status);
 }

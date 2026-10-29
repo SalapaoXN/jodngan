@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { todayQueryKey } from '../today/queries';
 import { createTask } from './api';
+import { DateTimePicker } from './DateTimePicker';
 import { activeTasksQueryKey } from './queries';
 import type { TaskListResponse } from './types';
 
@@ -16,6 +17,7 @@ export function QuickAddTask() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const {
+    control,
     handleSubmit,
     register,
     reset,
@@ -49,14 +51,29 @@ export function QuickAddTask() {
   }
 
   return (
-    <section className="quick-add" aria-label="Quick Add task">
+    <section className={isOpen ? 'quick-add quick-add-open' : 'quick-add quick-add-closed'} aria-label="Quick Add task">
       {!isOpen ? (
-        <button type="button" onClick={() => setIsOpen(true)}>
-          Add task
-        </button>
+        <div className="quick-add-launcher">
+          <div className="quick-add-copy">
+            <span className="quick-add-icon" aria-hidden="true">＋</span>
+            <div>
+              <strong>Capture a new task</strong>
+              <span>Just the task and deadline. Add details later.</span>
+            </div>
+          </div>
+          <button type="button" className="primary-action" onClick={() => setIsOpen(true)}>
+            Add task
+          </button>
+        </div>
       ) : (
         <form noValidate onSubmit={handleSubmit(submit)}>
-          <h2 id="quick-add-heading">Quick Add</h2>
+          <div className="quick-add-heading">
+            <div>
+              <p className="section-kicker">Fast capture</p>
+              <h2 id="quick-add-heading">Quick Add</h2>
+              <p>Keep it lightweight: name the work and set its deadline.</p>
+            </div>
+          </div>
           <div className="field-group">
             <label htmlFor="task-title">Task name</label>
             <input
@@ -79,12 +96,20 @@ export function QuickAddTask() {
 
           <div className="field-group">
             <label htmlFor="task-due-at">Due date and time</label>
-            <input
-              id="task-due-at"
-              type="datetime-local"
-              {...register('dueAt', { required: 'Choose a due date and time.' })}
-              aria-invalid={Boolean(errors.dueAt)}
-              aria-describedby={errors.dueAt ? 'task-due-at-error' : undefined}
+            <Controller
+              name="dueAt"
+              control={control}
+              rules={{ required: 'Choose a due date and time.' }}
+              render={({ field }) => (
+                <DateTimePicker
+                  id="task-due-at"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  invalid={Boolean(errors.dueAt)}
+                  describedBy={errors.dueAt ? 'task-due-at-error' : undefined}
+                />
+              )}
             />
             {errors.dueAt && (
               <p className="field-error" id="task-due-at-error" role="alert">
