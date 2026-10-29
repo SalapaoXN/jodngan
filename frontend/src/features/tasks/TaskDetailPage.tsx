@@ -8,6 +8,8 @@ import { ApiError } from '../../lib/api/client';
 import { todayQueryKey } from '../today/queries';
 import { DateTimePicker } from './DateTimePicker';
 import { formatRemainingTime } from './deadlineLabel';
+import type { TaskImportance } from './planningTypes';
+import { RiskInsight } from './RiskInsight';
 import { completeTask, reopenTask, updateTask } from './lifecycleApi';
 import { completedTasksQueryKey, taskDetailQueryKey, useTaskDetail } from './lifecycleQueries';
 import { activeTasksQueryKey } from './queries';
@@ -16,6 +18,9 @@ import type { Task } from './types';
 interface TaskDetailValues {
   title: string;
   dueAt: string;
+  estimatedMinutes: string;
+  importance: '' | TaskImportance;
+  notes: string;
 }
 
 function toLocalDateTimeInput(iso: string): string {
@@ -41,6 +46,9 @@ export function TaskDetailPage() {
       reset({
         title: taskQuery.data.title,
         dueAt: toLocalDateTimeInput(taskQuery.data.dueAt),
+        estimatedMinutes: taskQuery.data.estimatedMinutes?.toString() ?? '',
+        importance: taskQuery.data.importance ?? '',
+        notes: taskQuery.data.notes ?? '',
       });
     }
   }, [reset, taskQuery.data]);
@@ -58,6 +66,9 @@ export function TaskDetailPage() {
     mutationFn: (values: TaskDetailValues) => updateTask(taskId, {
       title: values.title.trim(),
       dueAt: new Date(values.dueAt).toISOString(),
+      estimatedMinutes: values.estimatedMinutes.trim() === '' ? null : Number(values.estimatedMinutes),
+      importance: values.importance === '' ? null : values.importance,
+      notes: values.notes.trim() === '' ? null : values.notes.trim(),
     }),
     onSuccess: syncTask,
   });
@@ -164,6 +175,71 @@ export function TaskDetailPage() {
             />
             {errors.dueAt && <p id="detail-task-due-error" className="field-error" role="alert">{errors.dueAt.message}</p>}
           </div>
+
+          <section className="planning-detail-section" aria-labelledby="planning-detail-heading">
+            <div className="planning-detail-heading">
+              <div>
+                <p className="section-kicker">Planning details</p>
+                <h3 id="planning-detail-heading">Improve the recommendation</h3>
+                <p>Add only what you know. These fields stay optional.</p>
+              </div>
+              <span className="optional-pill">Optional</span>
+            </div>
+
+            <div className="planning-fields-grid">
+              <div className="field-group">
+                <label htmlFor="detail-task-effort">Estimated effort</label>
+                <div className="input-with-suffix">
+                  <input
+                    id="detail-task-effort"
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    placeholder="e.g. 90"
+                    {...register('estimatedMinutes', {
+                      validate: (value) => {
+                        if (value.trim() === '') return true;
+                        const parsed = Number(value);
+                        return (Number.isInteger(parsed) && parsed > 0) || 'Use a whole number greater than zero.';
+                      },
+                    })}
+                    aria-invalid={Boolean(errors.estimatedMinutes)}
+                    aria-describedby={errors.estimatedMinutes ? 'detail-task-effort-error' : 'detail-task-effort-help'}
+                  />
+                  <span>min</span>
+                </div>
+                <p className="field-help" id="detail-task-effort-help">How much focused work do you expect?</p>
+                {errors.estimatedMinutes && (
+                  <p id="detail-task-effort-error" className="field-error" role="alert">{errors.estimatedMinutes.message}</p>
+                )}
+              </div>
+
+              <div className="field-group">
+                <label htmlFor="detail-task-importance">Importance</label>
+                <select id="detail-task-importance" {...register('importance')}>
+                  <option value="">Not set</option>
+                  <option value="LOW">Low</option>
+                  <option value="NORMAL">Normal</option>
+                  <option value="HIGH">High</option>
+                </select>
+                <p className="field-help">Deadline pressure still has more weight than importance.</p>
+              </div>
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="detail-task-notes">Notes</label>
+              <textarea
+                id="detail-task-notes"
+                rows={4}
+                placeholder="Context, requirements, or the next step…"
+                {...register('notes')}
+              />
+            </div>
+
+            {task.status === 'ACTIVE' && task.planning.risk && (
+              <RiskInsight risk={task.planning.risk} />
+            )}
+          </section>
 
           {task.status === 'ACTIVE' ? (
             <p className={task.planning.overdue ? 'deadline overdue' : 'deadline'}>

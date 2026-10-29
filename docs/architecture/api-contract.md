@@ -197,28 +197,36 @@ Return the current authenticated user.
 
 # Task Representation
 
-## Current Slice 1-3 Task
-The single-user trial currently returns the fields needed for capture, deadline feedback, and lifecycle state:
+## Current Slice 1-4 Task
+The single-user trial returns capture, lifecycle, optional planning enrichment, and conservative risk data:
 
 ```json
 {
   "id": "7c40f037-9d59-4b54-839f-b324e92f3b8e",
   "title": "Database Assignment",
   "dueAt": "2026-10-31T16:59:00Z",
+  "estimatedMinutes": 180,
+  "importance": "HIGH",
+  "notes": "Split the report into sections",
   "status": "ACTIVE",
   "completedAt": null,
   "createdAt": "2026-10-28T14:00:00Z",
   "updatedAt": "2026-10-28T14:00:00Z",
   "planning": {
     "remainingSeconds": 266400,
-    "overdue": false
+    "overdue": false,
+    "risk": {
+      "state": "NO_CONFIRMED_RISK",
+      "reasonCode": null,
+      "message": null
+    }
   }
 }
 ```
 
-`remainingSeconds` and `overdue` are derived and are not persisted.
+`remainingSeconds`, `overdue`, and `risk` are derived and are not persisted. `estimatedMinutes`, `importance`, and `notes` are nullable and may be cleared by sending `null` (or omitting them from the current full-replacement update payload). Completed Tasks return no active risk assessment.
 
-The richer representations below are target shapes introduced progressively by later slices.
+Course fields remain deferred to Slice 5.
 
 ## Task Summary
 Used by Today and Tasks lists.
@@ -347,7 +355,7 @@ Course filtering is added later in Slice 5.
 }
 ```
 
-This is the current Slice 1-3 Task list shape. Enriched Course, effort, importance, due-today, and risk fields belong to later slices.
+This is the current Slice 4 Task list shape for the single-user trial. Effort, importance, notes, and conservative risk are available now; Course and due-today enrichment remain deferred.
 
 Ordering:
 - ACTIVE Tasks by due date ascending, then stable ID ordering
@@ -358,7 +366,7 @@ This endpoint is a Task list, not the scheduling ranking endpoint.
 ---
 
 ## GET /api/tasks/{taskId}
-Return one Task Detail. In Slice 3 this uses the current Task representation above, including `completedAt`; enriched effort/Course fields arrive later.
+Return one Task Detail. In Slice 4 this uses the current enriched Task representation above, including `completedAt`, optional effort/importance/notes, and derived risk. Course remains deferred to Slice 5.
 
 ### Response - 200
 Current Task representation.
@@ -370,24 +378,27 @@ Authentication adds `401 UNAUTHENTICATED` later.
 
 ---
 
-## PUT /api/tasks/{taskId} (Slice 3)
-Edit the fields currently available in Task Detail.
+## PUT /api/tasks/{taskId} (Slice 4)
+Edit core Task fields plus optional planning enrichment from Task Detail.
 
-### Request - Current Slice 3
+### Request - Current Slice 4
 
 ```json
 {
   "title": "Database Final Assignment",
-  "dueAt": "2026-11-01T16:59:00Z"
+  "dueAt": "2026-11-01T16:59:00Z",
+  "estimatedMinutes": 180,
+  "importance": "HIGH",
+  "notes": "Split the report into sections"
 }
 ```
 
-Course, estimated effort, importance, and notes are added by later slices and are intentionally not accepted yet.
+`estimatedMinutes`, `importance`, and `notes` are optional. Sending them as `null` (or omitting them from this full-replacement request) clears the stored value. Course remains deferred to Slice 5.
 
 ### Response - 200
-Returns the updated current Task representation with recalculated deadline planning data.
+Returns the updated current Task representation with recalculated deadline, recommendation input, and risk data.
 
-### Errors - Current Slice 3
+### Errors - Current Slice 4
 - `400 VALIDATION_ERROR`
 - `404 RESOURCE_NOT_FOUND`
 

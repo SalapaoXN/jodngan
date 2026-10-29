@@ -6,11 +6,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.jodngan.scheduling.domain.PlanningImportance;
 import com.jodngan.scheduling.domain.RankedTask;
 import com.jodngan.scheduling.domain.SchedulableTask;
 import com.jodngan.scheduling.domain.SchedulingEngine;
 import com.jodngan.task.application.TaskPlanningData;
 import com.jodngan.task.application.TaskPlanningReader;
+import com.jodngan.task.domain.TaskImportance;
 
 @Service
 public class TodayQueryService {
@@ -52,6 +54,8 @@ public class TodayQueryService {
                 task.id(),
                 task.title(),
                 task.dueAt(),
+                task.estimatedMinutes(),
+                toPlanningImportance(task.importance()),
                 task.createdAt(),
                 task.updatedAt());
     }
@@ -62,6 +66,8 @@ public class TodayQueryService {
                 task.id(),
                 task.title(),
                 task.dueAt(),
+                task.estimatedMinutes(),
+                toTaskImportance(task.importance()),
                 task.createdAt(),
                 task.updatedAt());
         return new TodayView.Recommendation(
@@ -69,7 +75,30 @@ public class TodayQueryService {
                 ranked.urgency(),
                 ranked.reason(),
                 ranked.startGuidance(),
+                ranked.risk(),
                 ranked.remainingSeconds(),
                 ranked.overdue());
+    }
+
+    private static PlanningImportance toPlanningImportance(TaskImportance importance) {
+        if (importance == null) {
+            return null;
+        }
+        return switch (importance) {
+            case LOW -> PlanningImportance.LOW;
+            case NORMAL -> PlanningImportance.NORMAL;
+            case HIGH -> PlanningImportance.HIGH;
+        };
+    }
+
+    private static TaskImportance toTaskImportance(PlanningImportance importance) {
+        if (importance == null) {
+            return null;
+        }
+        return switch (importance) {
+            case LOW -> TaskImportance.LOW;
+            case NORMAL -> TaskImportance.NORMAL;
+            case HIGH -> TaskImportance.HIGH;
+        };
     }
 }

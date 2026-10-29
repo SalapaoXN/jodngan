@@ -1,4 +1,5 @@
 import { formatRemainingTime } from '../tasks/deadlineLabel';
+import { RiskInsight } from '../tasks/RiskInsight';
 import type { StartGuidance, TodayRecommendation } from './types';
 
 const startGuidanceLabels: Record<StartGuidance, string> = {
@@ -28,6 +29,10 @@ export function RecommendationCard({ recommendation }: { recommendation: TodayRe
         </div>
 
         <p className="recommendation-reason">{recommendation.reason}</p>
+
+        {recommendation.task.planning.risk?.state === 'AT_RISK' && (
+          <RiskInsight risk={recommendation.task.planning.risk} compact />
+        )}
 
         <div className="recommendation-footer">
           <span className={recommendation.task.planning.overdue ? 'deadline overdue' : 'deadline'}>

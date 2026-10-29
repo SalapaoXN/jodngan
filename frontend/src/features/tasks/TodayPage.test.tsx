@@ -42,11 +42,22 @@ function task(overrides: Partial<Task> = {}): Task {
     id: 'a6c0ce45-9efb-4c26-bcf4-4da02cbcc4fb',
     title: 'Database Assignment',
     dueAt: '2030-03-15T13:45:00Z',
+    estimatedMinutes: null,
+    importance: null,
+    notes: null,
     status: 'ACTIVE',
     completedAt: null,
     createdAt: '2030-03-01T00:00:00Z',
     updatedAt: '2030-03-01T00:00:00Z',
-    planning: { remainingSeconds: 7_200, overdue: false },
+    planning: {
+      remainingSeconds: 7_200,
+      overdue: false,
+      risk: {
+        state: 'INSUFFICIENT_DATA',
+        reasonCode: 'EFFORT_UNKNOWN',
+        message: 'เพิ่มเวลาที่คาดว่าจะใช้เพื่อประเมินความเสี่ยงได้ดีขึ้น',
+      },
+    },
     ...overrides,
   };
 }
@@ -133,7 +144,15 @@ describe('single-user Today flow', () => {
     const dueAtInput = localTodayAt('13:45');
     const savedTask = task({
       dueAt: new Date(dueAtInput).toISOString(),
-      planning: { remainingSeconds: 7_200, overdue: false },
+      planning: {
+        remainingSeconds: 7_200,
+        overdue: false,
+        risk: {
+          state: 'INSUFFICIENT_DATA',
+          reasonCode: 'EFFORT_UNKNOWN',
+          message: 'เพิ่มเวลาที่คาดว่าจะใช้เพื่อประเมินความเสี่ยงได้ดีขึ้น',
+        },
+      },
     });
     let saved = false;
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
@@ -180,7 +199,17 @@ describe('single-user Today flow', () => {
   });
 
   it('renders overdue feedback and start-now guidance from the Today API', async () => {
-    const overdueTask = task({ planning: { remainingSeconds: -10_800, overdue: true } });
+    const overdueTask = task({
+      planning: {
+        remainingSeconds: -10_800,
+        overdue: true,
+        risk: {
+          state: 'AT_RISK',
+          reasonCode: 'OVERDUE',
+          message: 'เลยกำหนดส่งแล้ว',
+        },
+      },
+    });
     mockReadApis(
       [overdueTask],
       todayResponse(recommendation(overdueTask, {
@@ -193,6 +222,7 @@ describe('single-user Today flow', () => {
     renderApp();
 
     expect(await screen.findByText('เลยกำหนดส่งแล้ว')).toBeInTheDocument();
+    expect(screen.getAllByText('At risk').length).toBeGreaterThan(0);
     expect(screen.getByText('เริ่มตอนนี้')).toBeInTheDocument();
     expect(screen.getAllByText('เลยกำหนดแล้ว 3 ชั่วโมง').length).toBeGreaterThan(0);
   });

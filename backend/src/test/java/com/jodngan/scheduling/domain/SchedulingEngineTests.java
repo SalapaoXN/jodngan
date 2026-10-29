@@ -145,6 +145,13 @@ class SchedulingEngineTests {
     }
 
     private static SchedulableTask task(String id, Instant dueAt, Instant createdAt) {
-        return new SchedulableTask(UUID.fromString(id), "Task " + id.substring(id.length() - 1), dueAt, createdAt, createdAt);
+        return new SchedulableTask(
+                UUID.fromString(id),
+                "Task " + id.substring(id.length() - 1),
+                dueAt,
+                null,
+                null,
+                createdAt,
+                createdAt);
     }
 }

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import com.jodngan.scheduling.domain.RecommendationReason;
+import com.jodngan.scheduling.domain.RiskAssessment;
 import com.jodngan.scheduling.domain.StartGuidance;
 import com.jodngan.scheduling.domain.UrgencyBand;
 import com.jodngan.task.application.TaskPlanningData;
@@ -22,6 +23,7 @@ public record TodayView(
             UrgencyBand urgency,
             RecommendationReason reasonCode,
             StartGuidance startGuidance,
+            RiskAssessment risk,
             long remainingSeconds,
             boolean overdue) {
 

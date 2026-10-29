@@ -222,18 +222,20 @@ Course public application contract only when validating/changing a Course assign
 ## Exposes to scheduling
 Scheduling should consume immutable planning projections rather than Task persistence objects.
 
-Current Slice 2 contract:
+Current Slice 4 contract:
 
 ```text
 TaskPlanningData
 - id
 - title
 - dueAt
+- estimatedMinutes?
+- importance?
 - createdAt
 - updatedAt
 ```
 
-The Task application boundary exposes only ACTIVE planning data. Later slices may add estimated effort and importance to this projection when those features become real requirements.
+The Task application boundary exposes only ACTIVE planning data. Notes stay inside Task because scheduling does not need them. Course is added only when the Course slice begins.
 
 Task remains the source of truth; scheduling does not own or mutate it.
 

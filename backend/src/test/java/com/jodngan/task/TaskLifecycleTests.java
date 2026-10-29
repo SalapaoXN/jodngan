@@ -50,10 +50,18 @@ class TaskLifecycleTests {
         Task completed = task(TaskStatus.COMPLETED, completedAt, completedAt);
         Instant editedAt = completedAt.plusSeconds(120);
 
-        Task edited = completed.edit("  Renamed task  ", DUE_AT.plusSeconds(3_600), editedAt);
+        Task edited = completed.edit(
+                "  Renamed task  ",
+                DUE_AT.plusSeconds(3_600),
+                180,
+                null,
+                "  Keep this note  ",
+                editedAt);
 
         assertEquals("Renamed task", edited.title());
         assertEquals(DUE_AT.plusSeconds(3_600), edited.dueAt());
+        assertEquals(180, edited.estimatedMinutes());
+        assertEquals("Keep this note", edited.notes());
         assertEquals(TaskStatus.COMPLETED, edited.status());
         assertEquals(completedAt, edited.completedAt());
         assertEquals(editedAt, edited.updatedAt());
@@ -64,6 +72,9 @@ class TaskLifecycleTests {
                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
                 "Lifecycle task",
                 DUE_AT,
+                null,
+                null,
+                null,
                 status,
                 completedAt,
                 CREATED_AT,

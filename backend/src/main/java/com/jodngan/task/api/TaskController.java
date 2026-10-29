@@ -46,7 +46,13 @@ public class TaskController {
 
     @PutMapping("/{taskId}")
     public TaskResponse updateTask(@PathVariable UUID taskId, @Valid @RequestBody UpdateTaskRequest request) {
-        return TaskResponse.from(taskApplicationService.updateTask(taskId, request.title(), request.dueAt()));
+        return TaskResponse.from(taskApplicationService.updateTask(
+                taskId,
+                request.title(),
+                request.dueAt(),
+                request.estimatedMinutes(),
+                request.importance(),
+                request.notes()));
     }
 
     @PostMapping("/{taskId}/complete")

@@ -432,7 +432,10 @@ body {
   font-weight: 750;
 }
 
-.field-group input {
+.field-group input,
+.field-group select,
+.field-group textarea {
+  width: 100%;
   min-height: 50px;
   padding: 11px 13px;
   border: 1px solid var(--jn-border-strong);
@@ -442,19 +445,213 @@ body {
   transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
-.field-group input:hover {
+.field-group textarea {
+  min-height: 108px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field-group input:hover,
+.field-group select:hover,
+.field-group textarea:hover {
   border-color: #9daf9f;
 }
 
-.field-group input:focus {
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus {
   border-color: var(--jn-green-700);
   box-shadow: 0 0 0 4px rgb(47 103 80 / 8%);
+}
+
+.field-help {
+  margin: 0;
+  color: var(--jn-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 .field-error,
 .form-error {
   color: var(--jn-danger);
   font-size: 0.82rem;
+}
+
+.planning-detail-section {
+  display: grid;
+  gap: 18px;
+  margin-top: 4px;
+  padding: 20px;
+  border: 1px solid #e0e7e2;
+  border-radius: 16px;
+  background: #f8faf8;
+}
+
+.planning-detail-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.planning-detail-heading h3 {
+  margin: 4px 0 5px;
+  color: var(--jn-ink);
+  font-size: 1.02rem;
+  letter-spacing: -0.015em;
+}
+
+.planning-detail-heading p:last-child {
+  margin: 0;
+  color: var(--jn-muted);
+  font-size: 0.8rem;
+}
+
+.optional-pill {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid #d8e2dc;
+  border-radius: 999px;
+  color: var(--jn-green-700);
+  background: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.planning-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.input-with-suffix {
+  position: relative;
+}
+
+.input-with-suffix input {
+  padding-right: 52px;
+}
+
+.input-with-suffix > span {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  color: var(--jn-muted);
+  transform: translateY(-50%);
+  font-size: 0.76rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.risk-insight {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dde4df;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.risk-insight-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  font-weight: 900;
+}
+
+.risk-insight-label,
+.risk-insight p {
+  margin: 0;
+}
+
+.risk-insight-label {
+  margin-bottom: 2px !important;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.risk-insight strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--jn-ink);
+  font-size: 0.9rem;
+}
+
+.risk-insight p:last-child {
+  color: var(--jn-ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.risk-at-risk {
+  border-color: #edc9c4;
+  background: #fff7f5;
+}
+
+.risk-at-risk .risk-insight-icon {
+  color: #fff;
+  background: var(--jn-danger);
+}
+
+.risk-at-risk .risk-insight-label {
+  color: var(--jn-danger);
+}
+
+.risk-no-confirmed-risk .risk-insight-icon {
+  color: var(--jn-green-800);
+  background: var(--jn-green-100);
+}
+
+.risk-no-confirmed-risk .risk-insight-label {
+  color: var(--jn-green-700);
+}
+
+.risk-insufficient-data .risk-insight-icon {
+  color: #806023;
+  background: #f7ecd4;
+}
+
+.risk-insufficient-data .risk-insight-label {
+  color: #806023;
+}
+
+.risk-insight.compact {
+  width: fit-content;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 9px;
+  margin: -8px 0 18px;
+  padding: 9px 11px;
+}
+
+.risk-insight.compact .risk-insight-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+
+.task-status-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--jn-danger);
+  background: var(--jn-danger-soft);
+  font-size: 0.7rem;
+  font-weight: 850;
 }
 
 .form-actions {
@@ -830,6 +1027,8 @@ body {
 
 .product-shell button:focus-visible,
 .product-shell input:focus-visible,
+.product-shell select:focus-visible,
+.product-shell textarea:focus-visible,
 .product-shell a:focus-visible {
   outline: 3px solid var(--jn-focus);
   outline-offset: 3px;
@@ -929,6 +1128,14 @@ body {
     padding: 20px;
   }
 
+  .planning-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .planning-detail-heading {
+    flex-direction: column;
+  }
+
   .task-card-heading {
     align-items: stretch;
     flex-direction: column;
@@ -942,10 +1149,6 @@ body {
     align-items: flex-start;
     flex-direction: column;
     gap: 7px;
-  }
-
-  .task-open-link {
-    display: none;
   }
 
   .detail-breadcrumb-row {

@@ -163,6 +163,8 @@ The user can maintain the full required Task lifecycle without hard deletion.
 
 # Slice 4 - Progressive Enrichment + Risk
 
+**Status: implemented; manual enrichment/risk smoke passed. Automated verification is pending.**
+
 ## Goal
 Make recommendations smarter without increasing initial capture friction.
 

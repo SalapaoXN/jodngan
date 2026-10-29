@@ -35,13 +35,17 @@ public record TodayResponse(
                     task.id(),
                     task.title(),
                     task.dueAt(),
+                    task.estimatedMinutes(),
+                    task.importance(),
+                    null,
                     TaskStatus.ACTIVE,
                     null,
                     task.createdAt(),
                     task.updatedAt(),
                     new TaskResponse.Planning(
                             recommendation.remainingSeconds(),
-                            recommendation.overdue()));
+                            recommendation.overdue(),
+                            TaskResponse.Risk.from(recommendation.risk())));
             return new Recommendation(
                     taskResponse,
                     recommendation.urgency(),

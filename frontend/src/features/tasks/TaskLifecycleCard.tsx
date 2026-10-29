@@ -41,9 +41,14 @@ export function TaskLifecycleCard({ task, actionLabel, actionPending, onAction }
               Completed{completedDate && task.completedAt ? <> <time dateTime={task.completedAt}>{completedDate}</time></> : null}
             </p>
           ) : (
-            <p className={task.planning.overdue ? 'deadline overdue' : 'deadline'}>
-              {formatRemainingTime(task.planning.remainingSeconds, task.planning.overdue)}
-            </p>
+            <div className="task-status-meta">
+              <p className={task.planning.overdue ? 'deadline overdue' : 'deadline'}>
+                {formatRemainingTime(task.planning.remainingSeconds, task.planning.overdue)}
+              </p>
+              {task.planning.risk?.state === 'AT_RISK' && (
+                <span className="task-risk-badge">At risk</span>
+              )}
+            </div>
           )}
           <Link className="task-open-link" to={`/tasks/${task.id}`}>Open details →</Link>
         </div>

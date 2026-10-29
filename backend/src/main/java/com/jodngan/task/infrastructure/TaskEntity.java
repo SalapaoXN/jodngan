@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.jodngan.task.domain.Task;
+import com.jodngan.task.domain.TaskImportance;
 import com.jodngan.task.domain.TaskStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,6 +26,16 @@ class TaskEntity {
     @Column(name = "due_at", nullable = false)
     private Instant dueAt;
 
+    @Column(name = "estimated_minutes")
+    private Integer estimatedMinutes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private TaskImportance importance;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private TaskStatus status;
@@ -45,6 +56,9 @@ class TaskEntity {
         id = task.id();
         title = task.title();
         dueAt = task.dueAt();
+        estimatedMinutes = task.estimatedMinutes();
+        importance = task.importance();
+        notes = task.notes();
         status = task.status();
         completedAt = task.completedAt();
         createdAt = task.createdAt();
@@ -56,6 +70,16 @@ class TaskEntity {
     }
 
     Task toDomain() {
-        return new Task(id, title, dueAt, status, completedAt, createdAt, updatedAt);
+        return new Task(
+                id,
+                title,
+                dueAt,
+                estimatedMinutes,
+                importance,
+                notes,
+                status,
+                completedAt,
+                createdAt,
+                updatedAt);
     }
 }

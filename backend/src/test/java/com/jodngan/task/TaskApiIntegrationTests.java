@@ -79,18 +79,26 @@ class TaskApiIntegrationTests {
     }
 
     @Test
-    void flywayCreatesOnlyTheSliceOneTaskSchema() {
+    void flywayCreatesTaskSchemaThroughPlanningEnrichmentMigration() {
         assertTrue(Arrays.stream(flyway.info().applied())
                 .anyMatch(migration -> migration.getVersion() != null
                         && "1".equals(migration.getVersion().getVersion())));
+        assertTrue(Arrays.stream(flyway.info().applied())
+                .anyMatch(migration -> migration.getVersion() != null
+                        && "2".equals(migration.getVersion().getVersion())));
         assertEquals(0L, jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM information_schema.tables "
                         + "WHERE table_schema = 'public' AND table_name = 'users'",
                 Long.class));
+        assertEquals(3L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM information_schema.columns "
+                        + "WHERE table_schema = 'public' AND table_name = 'tasks' "
+                        + "AND column_name IN ('estimated_minutes', 'importance', 'notes')",
+                Long.class));
         assertEquals(0L, jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM information_schema.columns "
                         + "WHERE table_schema = 'public' AND table_name = 'tasks' "
-                        + "AND column_name IN ('user_id', 'course_id', 'estimated_minutes', 'importance', 'notes')",
+                        + "AND column_name IN ('user_id', 'course_id')",
                 Long.class));
     }
 
@@ -102,8 +110,13 @@ class TaskApiIntegrationTests {
                 .andExpect(jsonPath("$.title").value("Database Assignment"))
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.dueAt").value(dueAt.toString()))
+                .andExpect(jsonPath("$.estimatedMinutes").doesNotExist())
+                .andExpect(jsonPath("$.importance").doesNotExist())
+                .andExpect(jsonPath("$.notes").doesNotExist())
                 .andExpect(jsonPath("$.planning.remainingSeconds").value(86_400))
                 .andExpect(jsonPath("$.planning.overdue").value(false))
+                .andExpect(jsonPath("$.planning.risk.state").value("INSUFFICIENT_DATA"))
+                .andExpect(jsonPath("$.planning.risk.reasonCode").value("EFFORT_UNKNOWN"))
                 .andReturn();
         JsonNode response = objectMapper.readTree(result.getResponse().getContentAsString());
 
@@ -324,6 +337,118 @@ class TaskApiIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated title"))
                 .andExpect(jsonPath("$.dueAt").value(newDueAt.toString()));
+    }
+
+    @Test
+    void updatesAndClearsOptionalPlanningFields() throws Exception {
+        MvcResult createdResult = postTask("Planning task", FIXED_NOW.plusSeconds(7 * 86_400L))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String id = objectMapper.readTree(createdResult.getResponse().getContentAsString()).get("id").asText();
+        Instant dueAt = FIXED_NOW.plusSeconds(7 * 86_400L);
+
+        mockMvc.perform(put("/api/tasks/{taskId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "title", "Planning task",
+                                "dueAt", dueAt.toString(),
+                                "estimatedMinutes", 180,
+                                "importance", "HIGH",
+                                "notes", "  Split the report into sections  "))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estimatedMinutes").value(180))
+                .andExpect(jsonPath("$.importance").value("HIGH"))
+                .andExpect(jsonPath("$.notes").value("Split the report into sections"))
+                .andExpect(jsonPath("$.planning.risk.state").value("NO_CONFIRMED_RISK"));
+
+        assertEquals(180, jdbcTemplate.queryForObject(
+                "SELECT estimated_minutes FROM tasks WHERE id = ?", Integer.class, UUID.fromString(id)));
+        assertEquals("HIGH", jdbcTemplate.queryForObject(
+                "SELECT importance FROM tasks WHERE id = ?", String.class, UUID.fromString(id)));
+
+        mockMvc.perform(put("/api/tasks/{taskId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "title", "Planning task",
+                                "dueAt", dueAt.toString()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estimatedMinutes").doesNotExist())
+                .andExpect(jsonPath("$.importance").doesNotExist())
+                .andExpect(jsonPath("$.notes").doesNotExist())
+                .andExpect(jsonPath("$.planning.risk.state").value("INSUFFICIENT_DATA"))
+                .andExpect(jsonPath("$.planning.risk.reasonCode").value("EFFORT_UNKNOWN"));
+
+        assertEquals(0L, jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM tasks WHERE id = ? AND estimated_minutes IS NOT NULL",
+                Long.class,
+                UUID.fromString(id)));
+    }
+
+    @Test
+    void rejectsNonPositiveEstimatedEffort() throws Exception {
+        MvcResult createdResult = postTask("Invalid effort task", FIXED_NOW.plusSeconds(86_400))
+                .andExpect(status().isCreated())
+                .andReturn();
+        String id = objectMapper.readTree(createdResult.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(put("/api/tasks/{taskId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "title", "Invalid effort task",
+                                "dueAt", FIXED_NOW.plusSeconds(86_400).toString(),
+                                "estimatedMinutes", 0))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.estimatedMinutes").exists());
+    }
+
+    @Test
+    void enrichingEffortCanImmediatelyChangeTodayRecommendation() throws Exception {
+        Instant earlierDueAt = FIXED_NOW.plusSeconds(4 * 86_400L);
+        Instant laterDueAt = FIXED_NOW.plusSeconds(4 * 86_400L + 3_600);
+        postTask("Earlier small task", earlierDueAt).andExpect(status().isCreated());
+        MvcResult laterResult = postTask("Later large task", laterDueAt)
+                .andExpect(status().isCreated())
+                .andReturn();
+        String laterId = objectMapper.readTree(laterResult.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.primaryRecommendation.task.title").value("Earlier small task"));
+
+        mockMvc.perform(put("/api/tasks/{taskId}", laterId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "title", "Later large task",
+                                "dueAt", laterDueAt.toString(),
+                                "estimatedMinutes", 1_800))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.primaryRecommendation.task.id").value(laterId))
+                .andExpect(jsonPath("$.primaryRecommendation.reasonCode").value("HIGH_EFFORT_PRESSURE"))
+                .andExpect(jsonPath("$.primaryRecommendation.startGuidance").value("START_TODAY"))
+                .andExpect(jsonPath("$.primaryRecommendation.task.planning.risk.state").value("NO_CONFIRMED_RISK"));
+    }
+
+    @Test
+    void effortEqualToClockTimeIsReportedAtRisk() throws Exception {
+        Instant dueAt = FIXED_NOW.plusSeconds(120 * 60L);
+        MvcResult createdResult = postTask("Tight task", dueAt)
+                .andExpect(status().isCreated())
+                .andReturn();
+        String id = objectMapper.readTree(createdResult.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(put("/api/tasks/{taskId}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "title", "Tight task",
+                                "dueAt", dueAt.toString(),
+                                "estimatedMinutes", 120))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.planning.risk.state").value("AT_RISK"))
+                .andExpect(jsonPath("$.planning.risk.reasonCode").value("INSUFFICIENT_CLOCK_TIME"));
     }
 
     @Test

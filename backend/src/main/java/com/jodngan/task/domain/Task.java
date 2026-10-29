@@ -9,6 +9,9 @@ public record Task(
         UUID id,
         String title,
         Instant dueAt,
+        Integer estimatedMinutes,
+        TaskImportance importance,
+        String notes,
         TaskStatus status,
         Instant completedAt,
         Instant createdAt,
@@ -24,6 +27,15 @@ public record Task(
             throw new IllegalArgumentException("title must not exceed 200 characters");
         }
         Objects.requireNonNull(dueAt, "dueAt is required");
+        if (estimatedMinutes != null && estimatedMinutes <= 0) {
+            throw new IllegalArgumentException("estimatedMinutes must be greater than zero");
+        }
+        if (notes != null) {
+            notes = notes.strip();
+            if (notes.isEmpty()) {
+                notes = null;
+            }
+        }
         Objects.requireNonNull(status, "status is required");
         Objects.requireNonNull(createdAt, "createdAt is required");
         Objects.requireNonNull(updatedAt, "updatedAt is required");
@@ -34,25 +46,45 @@ public record Task(
     }
 
     public static Task create(String title, Instant dueAt, Instant now) {
-        return new Task(UUID.randomUUID(), title, dueAt, TaskStatus.ACTIVE, null, now, now);
+        return new Task(UUID.randomUUID(), title, dueAt, null, null, null, TaskStatus.ACTIVE, null, now, now);
     }
 
-    public Task edit(String title, Instant dueAt, Instant now) {
-        return new Task(id, title, dueAt, status, completedAt, createdAt, now);
+    public Task edit(
+            String title,
+            Instant dueAt,
+            Integer estimatedMinutes,
+            TaskImportance importance,
+            String notes,
+            Instant now) {
+        return new Task(
+                id,
+                title,
+                dueAt,
+                estimatedMinutes,
+                importance,
+                notes,
+                status,
+                completedAt,
+                createdAt,
+                now);
     }
 
     public Task complete(Instant now) {
         if (status == TaskStatus.COMPLETED) {
             return this;
         }
-        return new Task(id, title, dueAt, TaskStatus.COMPLETED, now, createdAt, now);
+        return new Task(
+                id, title, dueAt, estimatedMinutes, importance, notes,
+                TaskStatus.COMPLETED, now, createdAt, now);
     }
 
     public Task reopen(Instant now) {
         if (status == TaskStatus.ACTIVE) {
             return this;
         }
-        return new Task(id, title, dueAt, TaskStatus.ACTIVE, null, createdAt, now);
+        return new Task(
+                id, title, dueAt, estimatedMinutes, importance, notes,
+                TaskStatus.ACTIVE, null, createdAt, now);
     }
 
     public TaskDeadlineProgress deadlineProgressAt(Instant now) {

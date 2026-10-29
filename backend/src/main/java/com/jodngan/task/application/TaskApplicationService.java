@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.jodngan.task.domain.Task;
+import com.jodngan.task.domain.TaskImportance;
 import com.jodngan.task.domain.TaskStatus;
 
 @Service
@@ -42,9 +43,15 @@ public class TaskApplicationService implements TaskPlanningReader {
         return view(task, now);
     }
 
-    public TaskView updateTask(UUID id, String title, Instant dueAt) {
+    public TaskView updateTask(
+            UUID id,
+            String title,
+            Instant dueAt,
+            Integer estimatedMinutes,
+            TaskImportance importance,
+            String notes) {
         Instant now = clock.instant();
-        Task task = requireTask(id).edit(title, dueAt, now);
+        Task task = requireTask(id).edit(title, dueAt, estimatedMinutes, importance, notes, now);
         return view(taskRepository.save(task), now);
     }
 
